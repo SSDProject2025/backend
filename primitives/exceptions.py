@@ -6,3 +6,6 @@ class VoteException(Exception):
 
 class PegiException(Exception):
     help_message = "Error in creating PEGI ranking"
+
+class PublisherException(Exception):
+    help_message = "Error in creating publisher"
