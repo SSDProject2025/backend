@@ -9,8 +9,13 @@ https://docs.djangoproject.com/en/5.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
-
+import os
 from pathlib import Path
+
+from dotenv import load_dotenv
+
+# make sure to have created the .env file in top level
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -20,12 +25,13 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-^da&1b-q#e6_!%h9@#g)-rsm1=p6_qi3h2m20pmpr89#2)kc4)'
+SECRET_KEY = os.environ.get('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get('DEBUG') == 'True' # 'cause you can't just assign the value from the .env
 
-ALLOWED_HOSTS = []
+# if you set debug mode from .env you have to define the allowed hosts too
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '').split(',')
 
 
 # Application definition
@@ -37,16 +43,28 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+
+    'rest_framework',
+    'corsheaders',
+    'drf_spectacular',
+
+    'fiordispino.apps.FiordispinoConfig',
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+]
+
+# why not cors_origin_whitelist like in the slides? -> It's deprecated!
+CORS_ALLOWED_ORIGINS = [
+    'http://localhost:8000', # to be substituted with frontend address
 ]
 
 ROOT_URLCONF = 'backend.urls'
@@ -80,6 +98,17 @@ DATABASES = {
     }
 }
 
+REST_FRAMEWORK = {
+    #'DEFAULT_AUTHENTICATION_CLASSES': 'rest_framework.schemas.coreapi.AutoSchema'
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+}
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'Game Manager API',
+    'DESCRIPTION': 'A simple app to manage your gaming history',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+}
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
