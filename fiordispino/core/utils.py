@@ -3,7 +3,6 @@ from typing import Callable
 
 from typeguard import typechecked
 
-
 @typechecked
 def pattern(regex: str) -> Callable[[str], bool]:
     r = re.compile(regex)
