@@ -26,3 +26,11 @@ class GameTitleException(ValidationError):
 
 class NoTitleProvided(GameTitleException):
     pass
+
+
+### GENRE ###
+class GenreException(ValidationError):
+    help_message = "Error in creating genre"
+
+class NoGenreProvided(GenreException):
+    pass

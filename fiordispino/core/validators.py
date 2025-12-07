@@ -12,7 +12,7 @@ def validate_publisher(value: str) -> None:
     try:
         validate("publisher", value, min_len=1, max_len=100, custom=pattern(r'[a-zA-Z0-9\s]*'))
     except:
-        raise PublisherException("Invalid publisher")
+        raise PublisherException("Invalid publisher, please note that special characters are not allowed")
 
 
 @typechecked
@@ -39,4 +39,15 @@ def validate_title(value: str) -> None:
     try:
         validate("title", value, min_len=1, max_len=100, custom=pattern(r'[a-zA-Z0-9\s:]*'))
     except:
-        raise GameTitleException("Invalid title")
+        raise GameTitleException("Invalid title, please note the special characters are not allowed")
+
+
+@typechecked
+def validate_genre(value: str) -> None:
+    if not value or len(value) == 0:
+        raise NoGenreProvided("You must provide a genre")
+
+    try:
+        validate("genre", value, min_len=1, max_len=100, custom=pattern(r'[a-zA-Z\s]*'))
+    except:
+        raise GenreException("Invalid genre, please note that special characters and numbers are not allowed")

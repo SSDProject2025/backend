@@ -1,6 +1,5 @@
 import pytest
 import re
-from typeguard import TypeCheckError
 
 from fiordispino.core.utils import pattern
 
