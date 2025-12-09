@@ -5,7 +5,7 @@ from fiordispino.core.validators import *
 
 
 class Game(models.Model):
-    box_art = models.ImageField()
+    box_art = models.ImageField() # todo: you should give it a path to store the images. Better to specify it in the .env
     description = models.TextField(validators=[validate_game_description])
     title = models.TextField(validators=[validate_title])
     genre = models.ForeignKey(Genre, on_delete=models.CASCADE) # todo: this has to become a list
