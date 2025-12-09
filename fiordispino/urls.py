@@ -1,7 +1,6 @@
-from django.urls import path
 from rest_framework.routers import SimpleRouter
 
-from fiordispino.views.views import GenreViewSet, GameViewSet
+from fiordispino.views import GenreViewSet, GameViewSet
 
 '''
 urlpatterns = [
