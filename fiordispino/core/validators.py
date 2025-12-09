@@ -9,6 +9,9 @@ def validate_publisher(value: str) -> None:
     if not value[0].isupper():
         raise PublisherMustBeCapitalized("The publisher name must be capitalized")
 
+    if len(value) > 100:
+        raise PublisherTooLong("Please keep publisher under 100 characters")
+
     try:
         validate("publisher", value, min_len=1, max_len=100, custom=pattern(r'[a-zA-Z0-9\s]*'))
     except:
@@ -39,7 +42,7 @@ def validate_title(value: str) -> None:
     try:
         validate("title", value, min_len=1, max_len=100, custom=pattern(r'[a-zA-Z0-9\s:]*'))
     except:
-        raise GameTitleException("Invalid title, please note the special characters are not allowed")
+        raise GameTitleException("Invalid title, please please keep it under 100 characters and note the special characters are not allowed")
 
 
 @typechecked
@@ -47,7 +50,24 @@ def validate_genre(value: str) -> None:
     if not value or len(value) == 0:
         raise NoGenreProvided("You must provide a genre")
 
+    if len(value) > 100:
+        raise GenreTooLong("Please keep genre under 100 characters")
+
     try:
         validate("genre", value, min_len=1, max_len=100, custom=pattern(r'[a-zA-Z\s]*'))
     except:
         raise GenreException("Invalid genre, please note that special characters and numbers are not allowed")
+
+@typechecked
+def validate_game_description(value: str) -> None:
+    if not value or len(value) == 0:
+        raise NoDescriptionProvided("You must provide a game description")
+
+    if len(value) > 200:
+        raise DescriptionTooLong("Please keep game description under 200 characters")
+
+    try:
+        # this regex includes many characters for different alphabets, numbers, spaces, punctuation and limits special characters
+        validate("game_description", value, min_len=1, max_len=200, custom=pattern(r'^[\w\s!,;:.?\'"()-]*$'))
+    except:
+        raise GameDescriptionException("Invalid game description note that some characters are not allowed")

@@ -19,6 +19,9 @@ class NoPublisherProvided(PublisherException):
 class PublisherMustBeCapitalized(PublisherException):
     pass
 
+class PublisherTooLong(PublisherException):
+    pass
+
 
 ### GAME TITLE ###
 class GameTitleException(ValidationError):
@@ -33,4 +36,18 @@ class GenreException(ValidationError):
     help_message = "Error in creating genre"
 
 class NoGenreProvided(GenreException):
+    pass
+
+class GenreTooLong(GenreException):
+    pass
+
+
+### DESCRIPTION ###
+class GameDescriptionException(ValidationError):
+    help_message = "Error in creating game description"
+
+class NoDescriptionProvided(GameDescriptionException):
+    pass
+
+class DescriptionTooLong(GameDescriptionException):
     pass

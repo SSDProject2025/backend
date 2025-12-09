@@ -1,7 +1,7 @@
 import pytest
 
 from fiordispino.core.validators import validate_genre
-from fiordispino.core.exceptions import GenreException,NoGenreProvided
+from fiordispino.core.exceptions import GenreException,NoGenreProvided,GenreTooLong
 
 class TestValidateGenre:
 
@@ -17,6 +17,10 @@ class TestValidateGenre:
         with pytest.raises(GenreException):
             validate_genre('genre!!!!')
 
+
+    def test_validate_genre_should_fail_with_genre_too_long(self):
+        with pytest.raises(GenreTooLong):
+            validate_genre('a'*101)
 
     @pytest.mark.parametrize("genre", [
         "rpg", "fantasy", "dark fantasy", "fps", "horror"
