@@ -23,3 +23,8 @@ class IsAdminOrReadOnly(permissions.BasePermission):
 
         return bool(request.user and request.user.is_staff)
 
+# probably this is redudant because the first one should suffice
+class IsLibraryOwner(permissions.BasePermission):
+    def has_permission(self, request, view):
+        return request.user.groups.filter(name='library_owner').exists()
+
