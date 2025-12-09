@@ -10,6 +10,7 @@ class Game(models.Model):
     title = models.TextField(validators=[validate_title])
     genre = models.ForeignKey(Genre, on_delete=models.CASCADE) # todo: this has to become a list
     pegi = models.IntegerField(validators=[validate_pegi])
+    release_date = models.DateField() # do we keep it?
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
