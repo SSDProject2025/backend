@@ -14,9 +14,12 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+import dj_rest_auth
+from dj_rest_auth import registration
 from django.contrib import admin
 from django.urls import path, include
 from django.views.debug import default_urlconf
+from drf_spectacular.contrib import rest_auth
 from rest_framework.documentation import include_docs_urls
 from rest_framework.schemas import get_schema_view
 from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
@@ -34,6 +37,7 @@ urlpatterns = [
 
     # for safety reasons, save the admin mapping in the env file
     path(os.getenv('ADMIN_MAPPING'), admin.site.urls),
+    path('api-auth/', include('rest_framework.urls')),
 
     # deprecated!
     # path('docs/', include_docs_urls(title=API_TITLE, description=API_DESCRIPTION)), # human readable documentation
@@ -46,5 +50,7 @@ urlpatterns = [
 
     # genre api
     path('api/v1/', include('fiordispino.urls')),
+    path('api/v1/auth/', include('dj_rest_auth.urls')),
+    path('api/v1/auth/registration/', include('dj_rest_auth.registration.urls')),
 
 ]
