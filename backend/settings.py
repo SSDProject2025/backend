@@ -72,7 +72,7 @@ MIDDLEWARE = [
 
 # why not cors_origin_whitelist like in the slides? -> It's deprecated!
 CORS_ALLOWED_ORIGINS = [
-    'http://localhost:8000', # to be substituted with frontend address
+    'http://localhost:8000',
 ]
 
 ROOT_URLCONF = 'backend.urls'
@@ -110,6 +110,9 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.SessionAuthentication',
         'rest_framework.authentication.TokenAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAdminUser',
     ],
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
