@@ -28,6 +28,10 @@ class GameViewSet(viewsets.ModelViewSet):
     serializer_class = GameSerializer
 
 class GamesToPlayViewSet(viewsets.ModelViewSet):
-    permission_classes = [permissions.IsLibraryOwnerUpdateOnly]
+    permission_classes = [permissions.IsOwnerOrReadOnly]
     queryset = GamesToPlay.objects.all()
     serializer_class = GamesToPlaySerializer
+
+    def perform_create(self, serializer):
+        # the owner is read-only -> when you create an entry of games-to-play inject the logged user as owner
+        serializer.save(owner=self.request.user)

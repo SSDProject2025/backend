@@ -1,62 +1,84 @@
-from django.urls import reverse
-from rest_framework import status
+import time
 
+from django.db import IntegrityError
+
+from fiordispino.models import GamesToPlay
 from fiordispino.tests.utils_testing import *
 
 
 @pytest.mark.django_db
 class TestGamesToPlay:
 
-    def test_owner_can_edit(self, games_to_play, games_to_play_data):
-        target_obj = games_to_play[0]
-        owner = target_obj.owner
-        path = reverse('games-to-play-detail', kwargs={'pk': target_obj.id})
-        client = get_client()
-        client.force_authenticate(user=owner)
-        response = client.put(path, games_to_play_data, format='json')
+    def test_str_representation(self, user, games):
+        game = games[0]
+        entry = GamesToPlay.objects.create(owner=user, game=game)
 
-        assert response.status_code == status.HTTP_200_OK
+        expected_str = f"{user.username} wants to play {game.title}"
+        assert str(entry) == expected_str
 
-    def test_owner_cannot_delete(self, games_to_play):
-        target_obj = games_to_play[0]
-        owner = target_obj.owner
-        path = reverse('games-to-play-detail', kwargs={'pk': target_obj.id})
-        client = get_client()
-        client.force_authenticate(user=owner)
-        response = client.delete(path)
-        assert response.status_code == status.HTTP_403_FORBIDDEN
+    def test_uniqueness_constraint(self, user, games):
+        game = games[0]
 
-    def test_user_cannot_create(self, games_to_play_data):
-        path = reverse('games-to-play-list')
-        client = get_client()
-        response = client.post(path, games_to_play_data, format='json')
-        assert response.status_code == status.HTTP_403_FORBIDDEN
+        GamesToPlay.objects.create(owner=user, game=game)
 
+        with pytest.raises(IntegrityError):
+            GamesToPlay.objects.create(owner=user, game=game)
 
-    def test_user_can_see(self):
-       path = reverse('games-to-play-list')
-       client = get_client()
-       response = client.get(path)
-       assert response.status_code == status.HTTP_200_OK
-       obj = parse(response)
-       assert obj is not None
+    def test_different_users_can_add_same_game(self, games):
+        user1 = mixer.blend(User)
+        user2 = mixer.blend(User)
+        game = games[0]
 
-    def test_admin_cannot_edit(self, games_to_play_data, games_to_play, admin_user):
-        target_obj = games_to_play[0]
-        path = reverse('games-to-play-detail', kwargs={'pk': target_obj.id})
-        client = get_admin(admin_user)
-        response = client.put(path, games_to_play_data, format='json')
+        entry1 = GamesToPlay.objects.create(owner=user1, game=game)
 
-    def test_admin_cannot_delete(self, games_to_play_data, games_to_play, admin_user):
-        target_obj = games_to_play[0]
-        path = reverse('games-to-play-detail', kwargs={'pk': target_obj.id})
-        client = get_admin(admin_user)
-        response = client.delete(path)
-        assert response.status_code == status.HTTP_403_FORBIDDEN
+        entry2 = GamesToPlay.objects.create(owner=user2, game=game)
 
-    def test_admin_cannot_create(self, games_to_play_data, games_to_play, admin_user):
-        target_obj = games_to_play[0]
-        path = reverse('games-to-play-list')
-        client = get_admin(admin_user)
-        response = client.post(path, games_to_play_data, format='json')
-        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert entry1.pk != entry2.pk
+        assert GamesToPlay.objects.count() == 2
+
+    def test_timestamps_logic(self, user, games):
+        entry = GamesToPlay.objects.create(owner=user, game=games[0])
+
+        original_created_at = entry.created_at
+        original_updated_at = entry.updated_at
+
+        assert original_created_at is not None
+        assert original_updated_at is not None
+
+        # Facciamo passare un istante per garantire che il tempo cambi
+        time.sleep(0.01)
+
+        # Modifichiamo l'oggetto (anche un save a vuoto triggera auto_now)
+        entry.save()
+
+        # Ricarichiamo dal DB per essere sicuri dei dati
+        entry.refresh_from_db()
+
+        # created_at DEVE rimanere uguale
+        assert entry.created_at == original_created_at
+
+        # updated_at DEVE essere maggiore del precedente
+        assert entry.updated_at > original_updated_at
+
+    def test_cascade_delete_game(self, user, games):
+        game = games[0]
+        GamesToPlay.objects.create(owner=user, game=game)
+
+        assert GamesToPlay.objects.count() == 1
+
+        # Cancello il gioco originale
+        game.delete()
+
+        # La relazione deve essere sparita (on_delete=models.CASCADE)
+        assert GamesToPlay.objects.count() == 0
+
+    def test_cascade_delete_user(self, user, games):
+        GamesToPlay.objects.create(owner=user, game=games[0])
+
+        assert GamesToPlay.objects.count() == 1
+
+        # Cancello l'utente
+        user.delete()
+
+        # La lista deve essere sparita
+        assert GamesToPlay.objects.count() == 0

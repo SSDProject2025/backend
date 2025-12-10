@@ -1,20 +1,26 @@
 from rest_framework import serializers
-
-from fiordispino.models import GamesToPlay, Game
+from fiordispino.models import GamesToPlay
+# I am assuming your GameSerializer is in the same directory or available
+from fiordispino.serializers import game_serializer
 
 
 class GamesToPlaySerializer(serializers.ModelSerializer):
-
-    # Explicitly handles the ManyToMany relationship by accepting and validating
-    # a list of Game IDs (PKs) against the database for write operations.
-    games = serializers.PrimaryKeyRelatedField(
-        many=True,
-        queryset=Game.objects.all()
-    )
-
     class Meta:
-        fields = ('id', 'owner', 'games')
         model = GamesToPlay
+        fields = ('id', 'owner', 'game', 'created_at')
 
-        # otherwise owner would be requested in the put!
-        read_only_fields = ['owner']
+        # 'owner' is handled by the view (request.user), so it must be read-only here
+        # 'created_at' is auto-generated -> I guess it tells you when you completed the game?
+        read_only_fields = ['owner', 'created_at']
+
+    # to get the whole game representation instead of just the id
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+
+        # If you want the full game details:
+        representation['game'] = game_serializer.GameSerializer(instance.game).data
+
+        # if you just want the title:
+        # representation['game_title'] = instance.game.title
+
+        return representation

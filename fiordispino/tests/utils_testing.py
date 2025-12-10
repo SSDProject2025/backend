@@ -28,11 +28,11 @@ def genres(db):
     ]
 
 @pytest.fixture
-def games_to_play(db):
+def games_to_play(db, games):
     return [
-        mixer.blend('fiordispino.GamesToPlay'),
-        mixer.blend('fiordispino.GamesToPlay'),
-        mixer.blend('fiordispino.GamesToPlay'),
+        mixer.blend('fiordispino.GamesToPlay', game=games[0]),
+        mixer.blend('fiordispino.GamesToPlay', game=games[1]),
+        mixer.blend('fiordispino.GamesToPlay', game=games[2]),
     ]
 
 @pytest.fixture
@@ -70,13 +70,16 @@ def game_data(db, genre):
 @pytest.fixture
 def games_to_play_data(db, games):
     return {
-        'games': [game.id for game in games]
+        'game': games[0].pk
     }
 
 @pytest.fixture
 def admin_user():
     return mixer.blend(User, is_staff=True, is_superuser=True)
 
+@pytest.fixture
+def user():
+    return mixer.blend(User, is_staff=False, is_superuser=False)
 
 def get_admin(admin_user):
     res = APIClient()

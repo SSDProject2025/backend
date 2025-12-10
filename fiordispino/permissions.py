@@ -31,34 +31,33 @@ class IsLibraryOwner(permissions.BasePermission):
 
 from rest_framework import permissions
 
-from rest_framework import permissions
 
-
-class IsLibraryOwnerUpdateOnly(permissions.BasePermission):
+class IsOwnerOrReadOnly(permissions.BasePermission):
     """
-    - READ (GET): everyone can see
-    - CREATE (POST): no one can add more libraries -> every user has just a to-play and played library
-    - DELETE: no one can delete a library
-    - UPDATE (PUT/PATCH): only the owner can edit library
+    Custom permission to only allow owners of an object to edit or delete it.
+
+    Rules:
+    - READ (GET): Everyone can see the entries.
+    - CREATE (POST): Any authenticated user can create an entry (add a game).
+    - UPDATE (PUT/PATCH): Only the owner of the entry can update it (e.g., change rating).
+    - DELETE: Only the owner of the entry can delete it (remove the game).
     """
 
     def has_permission(self, request, view):
+        # Allow read-only methods for everyone (GET, HEAD, OPTIONS)
         if request.method in permissions.SAFE_METHODS:
             return True
 
-        if request.method in ['PUT', 'PATCH']:
-            return request.user and request.user.is_authenticated
-
-        return False
+        # For write operations (POST, PUT, DELETE), the user must be logged in.
+        return request.user and request.user.is_authenticated
 
     def has_object_permission(self, request, view, obj):
+        # Allow read-only methods for everyone
         if request.method in permissions.SAFE_METHODS:
             return True
 
-        if request.method in ['PUT', 'PATCH']:
-            return obj.owner == request.user
-
-        return False
+        # For UPDATE and DELETE, check if the user making the request is actually the owner of the object.
+        return obj.owner == request.user
 
 
 def forbid_add_permission(model_admin, request):
