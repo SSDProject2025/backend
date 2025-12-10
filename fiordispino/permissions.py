@@ -28,3 +28,14 @@ class IsLibraryOwner(permissions.BasePermission):
     def has_permission(self, request, view):
         return request.user.groups.filter(name='library_owner').exists()
 
+
+def forbid_add_permission(model_admin, request):
+    # to prevent the admin from creating libraries
+    return False
+
+def forbid_change_permission(model_admin, request, obj=None):
+    # to prevent the admin from editing libraries
+    return False
+
+def forbid_delete_permission(model_admin, request, obj=None):
+    return False
