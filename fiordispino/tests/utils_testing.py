@@ -18,9 +18,6 @@ def games(db):
         mixer.blend('fiordispino.Game', title='GTA VI'),
     ]
 
-@pytest.fixture
-def game(db):
-    return mixer.blend('fiordispino.Game')
 
 @pytest.fixture
 def genres(db):
