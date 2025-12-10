@@ -6,7 +6,7 @@ from fiordispino.permissions import *
 admin.site.register(Genre)
 admin.site.register(Game)
 
-# The admin should just visualize and delete libraries, not create/edit
+# The admin should just visualize libraries, not create/edit/delete
 @admin.register(GamesToPlay)
 class GamesToPlayAdmin(admin.ModelAdmin):
     has_add_permission = forbid_add_permission
