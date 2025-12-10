@@ -1,6 +1,6 @@
 from rest_framework.routers import SimpleRouter
 
-from fiordispino.views import GenreViewSet, GameViewSet
+from fiordispino.views import GenreViewSet, GameViewSet, GamesToPlayViewSet
 
 '''
 urlpatterns = [
@@ -12,5 +12,6 @@ urlpatterns = [
 router = SimpleRouter()
 router.register('genre', GenreViewSet, basename='genre')
 router.register('game', GameViewSet, basename='game')
+router.register(r'games-to-play', GamesToPlayViewSet, basename='games-to-play')
 
 urlpatterns = router.urls
