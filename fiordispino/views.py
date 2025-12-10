@@ -28,6 +28,6 @@ class GameViewSet(viewsets.ModelViewSet):
     serializer_class = GameSerializer
 
 class GamesToPlayViewSet(viewsets.ModelViewSet):
-    permission_classes = [permissions.IsLibraryOwner]
+    permission_classes = [permissions.IsLibraryOwnerUpdateOnly]
     queryset = GamesToPlay.objects.all()
     serializer_class = GamesToPlaySerializer

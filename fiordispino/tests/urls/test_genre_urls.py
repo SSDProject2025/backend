@@ -77,9 +77,3 @@ class TestGenreUrl:
         admin = get_admin(admin_user)
         response = admin.put(path, genre_data)
         assert response.status_code == status.HTTP_200_OK
-
-
-
-
-
-

@@ -29,6 +29,38 @@ class IsLibraryOwner(permissions.BasePermission):
         return request.user.groups.filter(name='library_owner').exists()
 
 
+from rest_framework import permissions
+
+from rest_framework import permissions
+
+
+class IsLibraryOwnerUpdateOnly(permissions.BasePermission):
+    """
+    - READ (GET): everyone can see
+    - CREATE (POST): no one can add more libraries -> every user has just a to-play and played library
+    - DELETE: no one can delete a library
+    - UPDATE (PUT/PATCH): only the owner can edit library
+    """
+
+    def has_permission(self, request, view):
+        if request.method in permissions.SAFE_METHODS:
+            return True
+
+        if request.method in ['PUT', 'PATCH']:
+            return request.user and request.user.is_authenticated
+
+        return False
+
+    def has_object_permission(self, request, view, obj):
+        if request.method in permissions.SAFE_METHODS:
+            return True
+
+        if request.method in ['PUT', 'PATCH']:
+            return obj.owner == request.user
+
+        return False
+
+
 def forbid_add_permission(model_admin, request):
     # to prevent the admin from creating libraries
     return False

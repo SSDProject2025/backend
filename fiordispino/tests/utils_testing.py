@@ -28,16 +28,20 @@ def genres(db):
     ]
 
 @pytest.fixture
+def games_to_play(db):
+    return [
+        mixer.blend('fiordispino.GamesToPlay'),
+        mixer.blend('fiordispino.GamesToPlay'),
+        mixer.blend('fiordispino.GamesToPlay'),
+    ]
+
+@pytest.fixture
 def genre(db):
     return mixer.blend('fiordispino.Genre')
 
 @pytest.fixture
 def genre_data(db):
     return {'name': 'genre'}
-
-@pytest.fixture
-def games_to_play(db):
-    return mixer.blend('fiordispino.GamesToPlay')
 
 @pytest.fixture
 def game_data(db, genre):
@@ -62,6 +66,12 @@ def game_data(db, genre):
     }
     
     return data
+
+@pytest.fixture
+def games_to_play_data(db, games):
+    return {
+        'games': [game.id for game in games]
+    }
 
 @pytest.fixture
 def admin_user():
