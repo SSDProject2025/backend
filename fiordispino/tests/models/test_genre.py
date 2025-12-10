@@ -1,30 +1,31 @@
-from django.test import TestCase
+import pytest
 from django.core.exceptions import ValidationError
-from fiordispino.models.genre import Genre
+from mixer.backend.django import mixer
+from fiordispino.models import Genre
 
-
-class GenreModelTest(TestCase):
+@pytest.mark.django_db
+class TestGenreModel:
 
     def test_genre_creation_and_str_method(self):
-        genre = Genre.objects.create(name="Fantasy")
+        genre = mixer.blend(Genre, name="Fantasy")
 
-        self.assertEqual(genre.name, "Fantasy")
-        self.assertEqual(str(genre), "Fantasy")
+        assert genre.name == "Fantasy"
+        assert str(genre) == "Fantasy"
 
-        self.assertIsNotNone(genre.created_at)
-        self.assertIsNotNone(genre.updated_at)
+        assert genre.created_at is not None
+        assert genre.updated_at is not None
 
     def test_genre_update_updates_timestamp(self):
-        genre = Genre.objects.create(name="Horror")
+        genre = mixer.blend(Genre)
         original_updated_at = genre.updated_at
 
         genre.name = "Survival Horror"
         genre.save()
 
-        self.assertNotEqual(genre.updated_at, original_updated_at)
+        assert genre.updated_at != original_updated_at
 
     def test_genre_validation_is_connected(self):
         invalid_genre = Genre(name="")
 
-        with self.assertRaises(ValidationError):
+        with pytest.raises(ValidationError):
             invalid_genre.full_clean()
