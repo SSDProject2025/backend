@@ -28,10 +28,7 @@ class TestGamePlayed:
         """
         game = games[0]
 
-        # Create the first entry
         GamePlayed.objects.create(owner=user, game=game, rating=7)
-
-        # Attempt to create a duplicate entry
         with pytest.raises(IntegrityError):
             GamePlayed.objects.create(owner=user, game=game, rating=9)
 
@@ -73,20 +70,11 @@ class TestGamePlayed:
         assert original_created_at is not None
         assert original_updated_at is not None
 
-        # Sleep briefly to ensure the timestamp actually changes
         time.sleep(0.01)
-
-        # Update the object (e.g., change rating) and save
         entry.rating = 6
         entry.save()
-
-        # Refresh from DB to get the DB-generated timestamps
         entry.refresh_from_db()
-
-        # created_at MUST remain the same
         assert entry.created_at == original_created_at
-
-        # updated_at MUST be greater than the original
         assert entry.updated_at > original_updated_at
 
     def test_cascade_delete_game(self, user, games):
@@ -97,11 +85,7 @@ class TestGamePlayed:
         GamePlayed.objects.create(owner=user, game=game, rating=9)
 
         assert GamePlayed.objects.count() == 1
-
-        # Delete the game
         game.delete()
-
-        # The relation should be gone
         assert GamePlayed.objects.count() == 0
 
     def test_cascade_delete_user(self, user, games):
@@ -111,9 +95,5 @@ class TestGamePlayed:
         GamePlayed.objects.create(owner=user, game=games[0], rating=9)
 
         assert GamePlayed.objects.count() == 1
-
-        # Delete the user
         user.delete()
-
-        # The list should be gone
         assert GamePlayed.objects.count() == 0
