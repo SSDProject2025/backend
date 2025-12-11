@@ -16,7 +16,7 @@ class GamePlayed(models.Model):
     game = models.ForeignKey(
         'fiordispino.game',
         on_delete=models.CASCADE,
-        related_name='played_by_users'
+        related_name='played_by_user'
     )
 
     rating = models.PositiveIntegerField(validators=[validate_vote])

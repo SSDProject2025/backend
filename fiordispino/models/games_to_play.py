@@ -16,7 +16,7 @@ class GamesToPlay(models.Model):
     game = models.ForeignKey(
         'fiordispino.game',
         on_delete=models.CASCADE,
-        related_name='played_by_users'
+        related_name='to_be_played_by_user'
     )
 
     created_at = models.DateTimeField(auto_now_add=True)
