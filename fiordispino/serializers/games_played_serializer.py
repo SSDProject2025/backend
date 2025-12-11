@@ -1,16 +1,13 @@
 from rest_framework import serializers
-from fiordispino.models import GamesToPlay
+from fiordispino.models import GamePlayed
 from fiordispino.serializers import game_serializer
 
 
-class GamesToPlaySerializer(serializers.ModelSerializer):
+class GamesPlayedSerializer(serializers.ModelSerializer):
     class Meta:
-        model = GamesToPlay
-        fields = ('id', 'owner', 'game', 'created_at')
-
-        # 'owner' is handled by the view (request.user), so it must be read-only here
-        # 'created_at' is auto-generated -> I guess it tells you when you completed the game?
-        read_only_fields = ['owner', 'created_at']
+        model = GamePlayed
+        fields = ('id', 'owner', 'game', 'created_at', 'rating')
+        read_only_fields = ('owner', 'created_at')
 
     # to get the whole game representation instead of just the id
     def to_representation(self, instance):

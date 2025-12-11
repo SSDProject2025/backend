@@ -5,6 +5,7 @@ from fiordispino.serializers import GenreSerializer
 from fiordispino.serializers.game_serializer import GameSerializer
 from fiordispino import permissions
 from fiordispino.serializers.games_to_play_serializer import GamesToPlaySerializer
+from fiordispino.serializers.games_played_serializer import GamesPlayedSerializer
 
 '''
 class GenreList(generics.ListCreateAPIView):
@@ -34,4 +35,12 @@ class GamesToPlayViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         # the owner is read-only -> when you create an entry of games-to-play inject the logged user as owner
+        serializer.save(owner=self.request.user)
+
+class GamePlayedViewSet(viewsets.ModelViewSet):
+    permission_classes = [permissions.IsOwnerOrReadOnly]
+    queryset = GamePlayed.objects.all()
+    serializer_class = GamesPlayedSerializer
+
+    def perform_create(self, serializer):
         serializer.save(owner=self.request.user)
