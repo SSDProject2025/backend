@@ -24,5 +24,11 @@ class GamePlayed(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    class Meta:
+        # so that a user can add a game to play at most 1 time
+        unique_together = ('owner', 'game')
+        verbose_name = "Game played"
+        verbose_name_plural = "Games played"
+
     def __str__(self):
         return f"{self.game.title} played by {self.owner.username} and rated {self.rating}/10"
