@@ -47,9 +47,7 @@ class GamesToPlayViewSet(viewsets.ModelViewSet):
 
         # do not add the game if it is already in the games played entity
         if GamePlayed.objects.filter(owner=user, game=game_).exists():
-            raise GameAlreadyInGamesPlayed(
-                {"detail": GameAlreadyInGamesPlayed.help_message}
-            )
+            raise GameAlreadyInGamesPlayed()
 
         serializer.save(owner=user)
 
@@ -89,9 +87,7 @@ class GamePlayedViewSet(viewsets.ModelViewSet):
 
         # do not add the game if it is already in the games to play entity
         if GamesToPlay.objects.filter(owner=user, game=game_).exists():
-            raise GameAlreadyInGamesToPlay(
-                {"detail": GameAlreadyInGamesToPlay.help_message}
-            )
+            raise GameAlreadyInGamesToPlay()
 
         # Se il controllo passa, salva iniettando l'owner
         serializer.save(owner=user)

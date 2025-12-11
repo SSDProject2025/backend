@@ -1,4 +1,7 @@
 from django.core.exceptions import ValidationError
+from rest_framework import status
+from rest_framework.exceptions import APIException
+
 
 # They have to extend ValidationError because it's the standard in django
 
@@ -55,8 +58,12 @@ class DescriptionTooLong(GameDescriptionException):
 
 ### GAMES TO PLAY/GAMES PLAYED ####
 
-class GameAlreadyInGamesToPlay(ValidationError):
-    help_message = "Before adding this game to the the games played list please remove it from the game to play list"
+class GameAlreadyInGamesToPlay(APIException):
+    status_code = status.HTTP_400_BAD_REQUEST
+    default_detail = "Before adding this game to the games played list please remove it from the game to play list."
+    default_code = 'game_already_in_to_play'
 
-class GameAlreadyInGamesPlayed(ValidationError):
-    help_message = "Before adding this game the games to play list please remove it from the games played list"
+class GameAlreadyInGamesPlayed(APIException):
+    status_code = status.HTTP_400_BAD_REQUEST
+    default_detail = "Before adding this game to the games to play list please remove it from the games played list."
+    default_code = 'game_already_in_played'
