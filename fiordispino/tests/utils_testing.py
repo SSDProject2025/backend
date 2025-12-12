@@ -83,13 +83,14 @@ def user():
 
 def get_admin(admin_user):
     res = APIClient()
-    res.force_login(admin_user)
+    #res.force_login(admin_user)
+    res.force_authenticate(admin_user)
     return res
 
 def get_client(user=None):
     res = APIClient()
     if user is not None:
-        res.force_login(user)
+       res.force_login(user)
     return res
 
 def parse(response):

@@ -119,6 +119,8 @@ REST_FRAMEWORK = {
 }
 
 ACCOUNT_SIGNUP_FIELDS = ['email*', 'username*', 'password1*', 'password2*']
+ACCOUNT_LOGIN_FIELDS = {'email*', 'password*'}
+ACCOUNT_UNIQUE_EMAIL = True
 ACCOUNT_EMAIL_VERIFICATION = "none"
 
 # ACCOUNT_AUTHENTICATION_METHOD = 'username_email'
