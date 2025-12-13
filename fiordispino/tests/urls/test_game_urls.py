@@ -9,17 +9,17 @@ class TestGameUrl:
 
     # --- USER TESTS (Read Only) ---
 
-    def test_games_user_can_see(self):
+    def test_games_user_can_see(self, user):
         path = reverse('game-list')
-        client = get_client()
+        client = get_client(user=user)
         response = client.get(path)
         assert response.status_code == status.HTTP_200_OK
         obj = parse(response)
         assert obj is not None
 
-    def test_games_user_can_see_specific_game(self, games):
+    def test_games_user_can_see_specific_game(self, games, user):
         path = reverse('game-detail', kwargs={'pk': games[0].id})
-        client = get_client()
+        client = get_client(user=user)
         response = client.get(path)
         assert response.status_code == status.HTTP_200_OK
         obj = parse(response)
@@ -27,22 +27,22 @@ class TestGameUrl:
 
     # --- USER TESTS (Forbidden Actions) ---
 
-    def test_games_non_admin_cant_add(self, game_data):
+    def test_games_non_admin_cant_add(self, game_data, user):
         path = reverse('game-list')
-        client = get_client()
+        client = get_client(user=user)
 
         response = client.post(path, game_data)
         assert response.status_code == status.HTTP_403_FORBIDDEN
 
-    def test_games_non_admin_cant_delete(self, games):
+    def test_games_non_admin_cant_delete(self, games, user):
         path = reverse('game-detail', kwargs={'pk': games[0].id})
-        client = get_client()
+        client = get_client(user=user)
         response = client.delete(path)
         assert response.status_code == status.HTTP_403_FORBIDDEN
 
-    def test_games_non_admin_cant_update(self, games, game_data):
+    def test_games_non_admin_cant_update(self, games, game_data, user):
         path = reverse('game-detail', kwargs={'pk': games[0].id})
-        client = get_client()
+        client = get_client(user=user)
 
         response = client.put(path, game_data)
         assert response.status_code == status.HTTP_403_FORBIDDEN

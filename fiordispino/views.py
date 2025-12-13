@@ -1,7 +1,8 @@
+from django.contrib.auth import get_user_model, authenticate
 from django.db import transaction
-from rest_framework import generics, viewsets, status
+from rest_framework import viewsets
 from rest_framework.decorators import action
-from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from fiordispino.models import *
 from fiordispino.serializers import GenreSerializer
@@ -10,6 +11,12 @@ from fiordispino import permissions
 from fiordispino.serializers.games_to_play_serializer import GamesToPlaySerializer
 from fiordispino.serializers.games_played_serializer import GamesPlayedSerializer
 from fiordispino.core.exceptions import GameAlreadyInGamesToPlay, GameAlreadyInGamesPlayed
+
+from rest_framework.response import Response
+from rest_framework import status
+from rest_framework.authtoken.models import Token
+from rest_framework.permissions import AllowAny
+from django.db import IntegrityError
 
 '''
 class GenreList(generics.ListCreateAPIView):
@@ -105,3 +112,86 @@ class GamePlayedViewSet(viewsets.ModelViewSet):
             played_instance.delete()
 
         return Response(status=status.HTTP_200_OK)
+
+User = get_user_model()
+
+class RegisterView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        email = request.data.get('email')
+        password1 = request.data.get('password1')
+        password2 = request.data.get('password2')
+
+        # Validazioni
+        if not email or not password1:
+            return Response(
+                {'error': 'Email e password sono richiesti'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if password1 != password2:
+            return Response(
+                {'error': 'Le password non coincidono'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Controlla se email esiste già
+        if User.objects.filter(email=email).exists():
+            return Response(
+                {'error': 'Questa email è già registrata'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            # Crea l'utente
+            user = User.objects.create_user(
+                username=email,  # Usa email come username
+                email=email,
+                password=password1
+            )
+
+            # Crea il token
+            token = Token.objects.create(user=user)
+
+            return Response({
+                'key': token.key
+            }, status=status.HTTP_201_CREATED)
+
+        except IntegrityError:
+            return Response(
+                {'error': 'Questa email è già registrata'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        except Exception as e:
+            return Response(
+                {'error': f'Errore durante la registrazione: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
+class LoginView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        email = request.data.get('email')
+        password = request.data.get('password')
+
+        if not email or not password:
+            return Response(
+                {'error': 'Email e password sono richiesti'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        user = authenticate(request, email=email, password=password)
+
+        if user:
+            token, created = Token.objects.get_or_create(user=user)
+            return Response({
+                'key': token.key
+            })
+
+        return Response(
+            {'error': 'Credenziali non valide'},
+            status=status.HTTP_401_UNAUTHORIZED
+        )

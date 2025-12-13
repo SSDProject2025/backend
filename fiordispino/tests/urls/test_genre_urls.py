@@ -23,21 +23,21 @@ class TestGenreUrl:
         obj = parse(response)
         assert obj is not None
 
-    def test_genre_non_admin_cant_add(self, game_data):
+    def test_genre_non_admin_cant_add(self, game_data, user):
         path = reverse('genre-list')
-        client = get_client()
+        client = get_client(user=user)
         response = client.post(path, game_data)
         assert response.status_code == status.HTTP_403_FORBIDDEN
 
-    def test_genre_non_admin_cant_delete(self, genres):
+    def test_genre_non_admin_cant_delete(self, genres, user):
         path = reverse('genre-detail', kwargs={'pk': genres[0].id})
-        user = get_client()
+        user = get_client(user=user)
         response = user.delete(path)
         assert response.status_code == status.HTTP_403_FORBIDDEN
 
-    def test_genre_non_admin_cant_update(self, genres, genre_data):
+    def test_genre_non_admin_cant_update(self, genres, genre_data, user):
         path = reverse('genre-detail', kwargs={'pk': genres[0].id})
-        user = get_client()
+        user = get_client(user=user)
         response = user.put(path, genre_data)
         assert response.status_code == status.HTTP_403_FORBIDDEN
 

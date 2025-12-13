@@ -13,7 +13,7 @@ class TestGameToPlayUrl:
 
     def test_owner_can_add(self, user,games_to_play_data):
         path = reverse('games-to-play-list')
-        client = get_client(user)
+        client = get_client(user=user)
 
         response = client.post(path, games_to_play_data)
 
@@ -28,7 +28,7 @@ class TestGameToPlayUrl:
         my_entry = mixer.blend('fiordispino.GamesToPlay', owner=user, game=games[0])
 
         path = reverse('games-to-play-detail', kwargs={'pk': my_entry.id})
-        client = get_client(user)
+        client = get_client(user=user)
 
         response = client.delete(path)
         assert response.status_code == status.HTTP_204_NO_CONTENT
@@ -40,7 +40,7 @@ class TestGameToPlayUrl:
         my_entry = mixer.blend('fiordispino.GamesToPlay', owner=user, game=games[0])
 
         path = reverse('games-to-play-detail', kwargs={'pk': my_entry.id})
-        client = get_client(user)
+        client = get_client(user=user)
 
         update_data = {'game': games[0].id}
 
@@ -49,36 +49,36 @@ class TestGameToPlayUrl:
 
     def test_user_can_see(self, user):
         path = reverse('games-to-play-list')
-        client = get_client(user)
+        client = get_client(user=user)
 
         response = client.get(path)
         assert response.status_code == status.HTTP_200_OK
 
     # --- STRANGER TESTS (Read Only, No Write) ---
 
-    def test_stranger_can_see_others_games(self, games_to_play):
+    def test_stranger_can_see_others_games(self, games_to_play, user):
         target_entry = games_to_play[0]
 
         path = reverse('games-to-play-detail', kwargs={'pk': target_entry.id})
-        client = get_client()
+        client = get_client(user=user)
 
         response = client.get(path)
         assert response.status_code == status.HTTP_200_OK
 
-    def test_stranger_cant_delete_others_games(self, games_to_play):
+    def test_stranger_cant_delete_others_games(self, games_to_play, user):
         target_entry = games_to_play[0]  # the fixture create entries with random owners
 
         path = reverse('games-to-play-detail', kwargs={'pk': target_entry.id})
-        client = get_client()
+        client = get_client(user=user)
 
         response = client.delete(path)
         assert response.status_code == status.HTTP_403_FORBIDDEN
 
-    def test_stranger_cant_update_others_games(self, games_to_play, games):
+    def test_stranger_cant_update_others_games(self, games_to_play, games, user):
         target_entry = games_to_play[0]
         path = reverse('games-to-play-detail', kwargs={'pk': target_entry.id})
 
-        client = get_client()  # Stranger
+        client = get_client(user=user)  # Stranger
         data = {'game': games[0].id}
 
         response = client.put(path, data)

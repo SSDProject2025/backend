@@ -61,20 +61,20 @@ class TestGamePlayedUrl:
         response = client.get(path)
         assert response.status_code == status.HTTP_200_OK
 
-    def test_stranger_cant_delete_others_games(self, games):
+    def test_stranger_cant_delete_others_games(self, games, user):
         target_entry = mixer.blend('fiordispino.GamePlayed', game=games[0])
 
         path = reverse('games-played-detail', kwargs={'pk': target_entry.id})
-        client = get_client()
+        client = get_client(user=user)
 
         response = client.delete(path)
         assert response.status_code == status.HTTP_403_FORBIDDEN
 
-    def test_stranger_cant_update_others_games(self, games):
+    def test_stranger_cant_update_others_games(self, games, user):
         target_entry = mixer.blend('fiordispino.GamePlayed', game=games[0])
         path = reverse('games-played-detail', kwargs={'pk': target_entry.id})
 
-        client = get_client()
+        client = get_client(user=user)
         data = {'game': games[0].id, 'rating': 10}
 
         response = client.put(path, data)

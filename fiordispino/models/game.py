@@ -1,5 +1,4 @@
 from django.db import models
-from django.contrib.auth import get_user_model
 
 from fiordispino.models import Genre
 from fiordispino.core.validators import *

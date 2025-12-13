@@ -5,7 +5,7 @@ from rest_framework import status
 from rest_framework.test import APIRequestFactory, force_authenticate  # Importante: importa force_authenticate
 from django.core.files.uploadedfile import SimpleUploadedFile
 from mixer.backend.django import mixer
-from django.contrib.auth.models import User  # Import per il tipo User
+from django.contrib.auth import get_user_model
 
 from fiordispino.views import GameViewSet
 from fiordispino.models import Game, Genre
@@ -16,11 +16,11 @@ class TestGameView:
 
     @pytest.fixture
     def admin_user(self):
-        return mixer.blend(User, is_staff=True, is_superuser=True)
+        return mixer.blend(get_user_model(), is_staff=True, is_superuser=True)
 
     @pytest.fixture
     def normal_user(self):
-        return mixer.blend(User, is_staff=False)
+        return mixer.blend(get_user_model(), is_staff=False)
 
     def test_list_games_view(self):
         # Create dummy data -> short titles to respect validators

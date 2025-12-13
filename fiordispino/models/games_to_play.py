@@ -1,5 +1,6 @@
-from django.contrib.auth import get_user_model
 from django.db import models
+
+from django.conf import settings
 
 """
 Strong refactor: this is no more a list of games but rather a single entity, so that the fact that a user cannot have more than 1 list of games to play
@@ -9,7 +10,7 @@ class GamesToPlay(models.Model):
 
     # A library is owned by just 1 user. If said user deletes his profile delete the library too
     owner = models.ForeignKey(
-        get_user_model(),
+        settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name='games_to_play'  # so that you can do user.games_to_play.all()
     )

@@ -26,6 +26,7 @@ from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, Spec
 import os
 
 from fiordispino.models import genre
+from fiordispino.views import LoginView, RegisterView
 
 API_TITLE = 'fiordispino api'
 API_DESCRIPTION = 'A Web Api to manage your gaming history'
@@ -51,6 +52,7 @@ urlpatterns = [
     # genre api
     path('api/v1/', include('fiordispino.urls')),
     path('api/v1/auth/', include('dj_rest_auth.urls')),
-    path('api/v1/auth/registration/', include('dj_rest_auth.registration.urls')),
+    path('api/v1/auth/login/', LoginView.as_view(), name='login'),
+    path('api/v1/auth/registration/', RegisterView.as_view(), name='register'),
 
 ]

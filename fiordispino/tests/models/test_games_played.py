@@ -1,5 +1,6 @@
 import time
 import pytest
+from django.contrib.auth import get_user_model
 from django.db import IntegrityError
 from django.core.exceptions import ValidationError
 from fiordispino.models import GamePlayed
@@ -48,8 +49,8 @@ class TestGamePlayed:
         """
         Test that two different users can mark the same game as played.
         """
-        user1 = mixer.blend(User)
-        user2 = mixer.blend(User)
+        user1 = mixer.blend(get_user_model())
+        user2 = mixer.blend(get_user_model())
         game = games[0]
 
         entry1 = GamePlayed.objects.create(owner=user1, game=game, rating=8)

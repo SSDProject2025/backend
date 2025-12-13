@@ -1,7 +1,8 @@
 import pytest
+from django.contrib.auth import get_user_model
 from django.urls import reverse
 from rest_framework import status
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 from fiordispino.models import GamesToPlay, GamePlayed
 from fiordispino.tests.utils_testing import *
 from fiordispino.core.exceptions import GameAlreadyInGamesPlayed
@@ -62,7 +63,7 @@ class TestGamesToPlayView:
         """
         Verify that a user cannot move another user's game.
         """
-        attacker = mixer.blend(User)
+        attacker = mixer.blend(get_user_model())
         game = games[0]
         entry_to_play = GamesToPlay.objects.create(owner=user, game=game)
 

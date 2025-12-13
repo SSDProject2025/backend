@@ -1,5 +1,6 @@
 import time
 
+from django.contrib.auth import get_user_model
 from django.db import IntegrityError
 
 from fiordispino.models import GamesToPlay
@@ -25,8 +26,8 @@ class TestGamesToPlay:
             GamesToPlay.objects.create(owner=user, game=game)
 
     def test_different_users_can_add_same_game(self, games):
-        user1 = mixer.blend(User)
-        user2 = mixer.blend(User)
+        user1 = mixer.blend(get_user_model())
+        user2 = mixer.blend(get_user_model())
         game = games[0]
 
         entry1 = GamesToPlay.objects.create(owner=user1, game=game)

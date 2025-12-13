@@ -2,7 +2,7 @@ import pytest
 from rest_framework import status
 from rest_framework.test import APIRequestFactory, force_authenticate
 from mixer.backend.django import mixer
-from django.contrib.auth.models import User  # Import necessario per creare l'admin
+from django.contrib.auth import get_user_model  # Import necessario per creare l'admin
 from fiordispino.views import GenreViewSet
 from fiordispino.models import Genre
 
@@ -18,7 +18,7 @@ class TestGenreView:
     # Aggiungiamo la fixture per l'admin, come fatto per Game
     @pytest.fixture
     def admin_user(self):
-        return mixer.blend(User, is_staff=True, is_superuser=True)
+        return mixer.blend(get_user_model(), is_staff=True, is_superuser=True)
 
     def test_list_genres_view(self):
         # create dummy data

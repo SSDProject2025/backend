@@ -73,6 +73,7 @@ MIDDLEWARE = [
 # why not cors_origin_whitelist like in the slides? -> It's deprecated!
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:8000', # django server
+    'http://localhost:5173', # django server
     # add frontend server here
 ]
 
@@ -109,7 +110,7 @@ DATABASES = {
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework.authentication.SessionAuthentication',
+        #'rest_framework.authentication.SessionAuthentication',
         'rest_framework.authentication.TokenAuthentication',
     ],
     'DEFAULT_PERMISSION_CLASSES': [
@@ -118,11 +119,19 @@ REST_FRAMEWORK = {
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
 
-ACCOUNT_SIGNUP_FIELDS = ['email*', 'username*', 'password1*', 'password2*']
-ACCOUNT_LOGIN_FIELDS = {'email*', 'password*'}
+# Custom User
+AUTH_USER_MODEL = 'fiordispino.User'
+ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_UNIQUE_EMAIL = True
 ACCOUNT_USERNAME_REQUIRED = False
-ACCOUNT_EMAIL_VERIFICATION = "none"
+ACCOUNT_AUTHENTICATION_METHOD = 'email'
+ACCOUNT_EMAIL_VERIFICATION = 'none'
+ACCOUNT_Preserve_USERNAME_CASING = False
+
+AUTHENTICATION_BACKENDS = [
+    'fiordispino.authentication.EmailBackend',
+    'allauth.account.auth_backends.AuthenticationBackend',
+]
 
 # ACCOUNT_AUTHENTICATION_METHOD = 'username_email'
 

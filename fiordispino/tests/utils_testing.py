@@ -3,9 +3,8 @@ from io import BytesIO
 
 import pytest
 from PIL import Image
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.template.defaultfilters import title
 from mixer.backend.django import mixer
 from rest_framework.test import APIClient
 
@@ -75,11 +74,11 @@ def games_to_play_data(db, games):
 
 @pytest.fixture
 def admin_user():
-    return mixer.blend(User, is_staff=True, is_superuser=True)
+    return mixer.blend(get_user_model(), is_staff=True, is_superuser=True)
 
 @pytest.fixture
 def user():
-    return mixer.blend(User, is_staff=False, is_superuser=False)
+    return mixer.blend(get_user_model(), is_staff=False, is_superuser=False)
 
 def get_admin(admin_user):
     res = APIClient()
@@ -89,9 +88,11 @@ def get_admin(admin_user):
 
 def get_client(user=None):
     res = APIClient()
+    res.force_authenticate(user=user)
     if user is not None:
        res.force_login(user)
     return res
+
 
 def parse(response):
     response.render()

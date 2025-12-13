@@ -1,7 +1,7 @@
-from django.contrib.auth import get_user_model
 from django.db import models
+
+from django.conf import settings
 from fiordispino.core.validators import validate_vote
-from fiordispino.models import game
 
 """
 having an entity that links a game as played by one user it's easier to handle compared to an entity that links a list of games to a user
@@ -9,7 +9,7 @@ in this way the fact that a user can have just one list of games is implicit by 
 """
 class GamePlayed(models.Model):
     owner = models.ForeignKey(
-        get_user_model(),
+        settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name='played_games'  # so that you can do user.played_games.all()
     )
