@@ -54,5 +54,4 @@ urlpatterns = [
     path('api/v1/auth/', include('dj_rest_auth.urls')),
     path('api/v1/auth/login/', LoginView.as_view(), name='login'),
     path('api/v1/auth/registration/', RegisterView.as_view(), name='register'),
-
 ]

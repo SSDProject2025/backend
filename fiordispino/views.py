@@ -18,6 +18,8 @@ from rest_framework.authtoken.models import Token
 from rest_framework.permissions import AllowAny
 from django.db import IntegrityError
 
+from fiordispino.serializers.user_serializer import RegisterSerializer
+
 '''
 class GenreList(generics.ListCreateAPIView):
     queryset = Genre.objects.all()
@@ -117,58 +119,26 @@ User = get_user_model()
 
 class RegisterView(APIView):
     permission_classes = [AllowAny]
+    serializer_class = RegisterSerializer  # Utile per la documentazione automatica
 
     def post(self, request):
-        email = request.data.get('email')
-        password1 = request.data.get('password1')
-        password2 = request.data.get('password2')
+        data = request.data.copy()
+        if 'password1' in data:
+            data['password'] = data['password1']
 
-        # Validazioni
-        if not email or not password1:
-            return Response(
-                {'error': 'Email e password sono richiesti'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+        serializer = RegisterSerializer(data=data)
 
-        if password1 != password2:
-            return Response(
-                {'error': 'Le password non coincidono'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+        if serializer.is_valid():
+            user = serializer.save()
 
-        # Controlla se email esiste già
-        if User.objects.filter(email=email).exists():
-            return Response(
-                {'error': 'Questa email è già registrata'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        try:
-            # Crea l'utente
-            user = User.objects.create_user(
-                username=email,  # Usa email come username
-                email=email,
-                password=password1
-            )
-
-            # Crea il token
-            token = Token.objects.create(user=user)
+            # Crea o recupera il token
+            token, created = Token.objects.get_or_create(user=user)
 
             return Response({
                 'key': token.key
             }, status=status.HTTP_201_CREATED)
 
-        except IntegrityError:
-            return Response(
-                {'error': 'Questa email è già registrata'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        except Exception as e:
-            return Response(
-                {'error': f'Errore durante la registrazione: {str(e)}'},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
-
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class LoginView(APIView):
     permission_classes = [AllowAny]
@@ -179,7 +149,7 @@ class LoginView(APIView):
 
         if not email or not password:
             return Response(
-                {'error': 'Email e password sono richiesti'},
+                {'error': 'Email and password are required'},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
@@ -192,6 +162,6 @@ class LoginView(APIView):
             })
 
         return Response(
-            {'error': 'Credenziali non valide'},
+            {'error': 'Invalid credentials'},
             status=status.HTTP_401_UNAUTHORIZED
         )
