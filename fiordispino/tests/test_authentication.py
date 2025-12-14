@@ -10,8 +10,10 @@ class TestEmailBackend:
 
     def test_authenticate_success(self, user):
         """
-        Verifica che l'autenticazione funzioni con email e password corretti.
+        Verifica che l'autenticazione funzioni correttamente quando
+        email e password sono validi.
         """
+
         # Impostiamo una password nota per il test
         password = "strong_password_123"
         user.set_password(password)
@@ -19,22 +21,31 @@ class TestEmailBackend:
 
         backend = EmailBackend()
 
-        # Simuliamo la chiamata di authenticate
-        authenticated_user = backend.authenticate(request=None, email=user.email, password=password)
+        # Testiamo passando l'email esplicitamente come kwargs
+        authenticated_user = backend.authenticate(
+            request=None,
+            email=user.email,
+            password=password
+        )
 
         assert authenticated_user is not None
         assert authenticated_user == user
 
     def test_authenticate_wrong_password(self, user):
         """
-        Verifica che l'autenticazione fallisca se la password è errata.
+        Verifica che l'autenticazione fallisca (ritorni None)
+        se la password è errata.
         """
         user.set_password("correct_password")
         user.save()
 
         backend = EmailBackend()
 
-        authenticated_user = backend.authenticate(request=None, email=user.email, password="wrong_password")
+        authenticated_user = backend.authenticate(
+            request=None,
+            email=user.email,
+            password="wrong_password"
+        )
 
         assert authenticated_user is None
 
@@ -44,14 +55,19 @@ class TestEmailBackend:
         """
         backend = EmailBackend()
 
-        authenticated_user = backend.authenticate(request=None, email="ghost@example.com", password="any_password")
+        authenticated_user = backend.authenticate(
+            request=None,
+            email="non_existent@example.com",
+            password="any_password"
+        )
 
         assert authenticated_user is None
 
     def test_authenticate_using_username_argument(self, user):
         """
-        Verifica che il backend accetti l'email anche se passata nel parametro 'username'.
-        (Molti form di Django passano 'username' anche se il campo è un'email).
+        Verifica che il backend accetti l'email anche se passata
+        nel parametro posizionale 'username'.
+        (Django passa 'username' di default anche se il campo è un'email).
         """
         password = "password123"
         user.set_password(password)
@@ -60,7 +76,11 @@ class TestEmailBackend:
         backend = EmailBackend()
 
         # Qui passiamo l'email all'interno dell'argomento 'username'
-        authenticated_user = backend.authenticate(request=None, username=user.email, password=password)
+        authenticated_user = backend.authenticate(
+            request=None,
+            username=user.email,
+            password=password
+        )
 
         assert authenticated_user == user
 
@@ -76,20 +96,23 @@ class TestEmailBackend:
         # Caso 2: Password mancante
         assert backend.authenticate(request=None, email="test@test.com", password=None) is None
 
-    def test_authenticate_inactive_user(self, user):
+    def test_authenticate_inactive_user_behavior(self, user):
         """
-        Opzionale: Verifica il comportamento con utenti inattivi.
-        Nota: Il tuo codice attuale NON controlla se l'utente è attivo (is_active).
-        Se volessi impedire il login agli utenti bannati, dovresti modificare il backend.
+        NOTA: Questo test verifica il comportamento attuale del tuo codice.
+        Attualmente, il tuo codice PERMETTE il login anche se is_active=False.
         """
-        user.set_password("password")
-        user.is_active = False  # Utente disattivato
+        password = "password"
+        user.set_password(password)
+        user.is_active = False  # Disattiviamo l'utente
         user.save()
 
         backend = EmailBackend()
-        authenticated_user = backend.authenticate(request=None, email=user.email, password="password")
+        authenticated_user = backend.authenticate(
+            request=None,
+            email=user.email,
+            password=password
+        )
 
-        # Al momento il tuo codice permette il login anche se is_active=False.
-        # Se questo è il comportamento voluto, il test deve aspettarsi 'user'.
-        # Se invece vuoi bloccarli, il test dovrebbe aspettarsi None.
+        # Se vuoi che gli utenti bannati possano loggarsi, questo assert deve essere True.
+        # Se invece vuoi bloccarli, dovrai modificare la classe EmailBackend.
         assert authenticated_user == user

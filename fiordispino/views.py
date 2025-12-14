@@ -11,14 +11,12 @@ from fiordispino import permissions
 from fiordispino.serializers.games_to_play_serializer import GamesToPlaySerializer
 from fiordispino.serializers.games_played_serializer import GamesPlayedSerializer
 from fiordispino.core.exceptions import GameAlreadyInGamesToPlay, GameAlreadyInGamesPlayed
+from fiordispino.serializers.user_serializer import RegisterSerializer, LoginSerializer
 
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.authtoken.models import Token
 from rest_framework.permissions import AllowAny
-from django.db import IntegrityError
-
-from fiordispino.serializers.user_serializer import RegisterSerializer
 
 '''
 class GenreList(generics.ListCreateAPIView):
@@ -140,26 +138,25 @@ class RegisterView(APIView):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
 class LoginView(APIView):
     permission_classes = [AllowAny]
+    serializer_class = LoginSerializer
 
     def post(self, request):
-        email = request.data.get('email')
-        password = request.data.get('password')
+        serializer = LoginSerializer(data=request.data)
 
-        if not email or not password:
-            return Response(
-                {'error': 'Email and password are required'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        email = serializer.validated_data['email']
+        password = serializer.validated_data['password']
 
         user = authenticate(request, email=email, password=password)
 
         if user:
             token, created = Token.objects.get_or_create(user=user)
-            return Response({
-                'key': token.key
-            })
+            return Response({'key': token.key}, status=status.HTTP_200_OK)
 
         return Response(
             {'error': 'Invalid credentials'},
