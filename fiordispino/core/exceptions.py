@@ -67,3 +67,8 @@ class GameAlreadyInGamesPlayed(APIException):
     status_code = status.HTTP_400_BAD_REQUEST
     default_detail = "Before adding this game to the games to play list please remove it from the games played list."
     default_code = 'game_already_in_played'
+
+
+### GLOBAL RATING ####
+class GlobalRatingException(ValidationError):
+    help_message = "Error in creating global rating"

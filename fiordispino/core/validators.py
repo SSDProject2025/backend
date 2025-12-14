@@ -71,3 +71,11 @@ def validate_game_description(value: str) -> None:
         validate("game_description", value, min_len=1, max_len=200, custom=pattern(r'^[\w\s!,;:.?\'"()-]*$'))
     except:
         raise GameDescriptionException("Invalid game description note that some characters are not allowed")
+
+
+@typechecked
+def validate_global_rating(value: float) -> None:
+    try:
+        validate("global_rating", value, min_value=0.0, max_value=10.0)
+    except:
+        raise GlobalRatingException("Global rating must be a value between 0 and 10")
