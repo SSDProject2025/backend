@@ -53,7 +53,7 @@ class TestGamePlayedUrl:
     # --- STRANGER TESTS (Read Only) ---
 
     def test_stranger_can_see_others_games(self, games):
-        target_entry = mixer.blend('fiordispino.GamePlayed', game=games[0])
+        target_entry = mixer.blend('fiordispino.GamePlayed', game=games[0], rating=5)
 
         path = reverse('games-played-detail', kwargs={'pk': target_entry.id})
         client = get_client() # Unauthenticated / Stranger

@@ -4,8 +4,9 @@ import pytest
 from django.core.exceptions import ValidationError
 from mixer.backend.django import mixer
 
-from fiordispino.models import Game, Genre
+from fiordispino.models import Game, Genre, GamePlayed
 from fiordispino.models.game import build_path
+from fiordispino.tests.utils_testing import *
 
 
 @pytest.mark.django_db
@@ -89,3 +90,45 @@ class TestGameModel:
 
         with pytest.raises(ValidationError):
             game.full_clean()
+
+    def test_game_global_rating_cant_have_more_than_three_digits(self):
+        game = Game(
+            title="The Legend of Zelda",
+            description="classic fantasy rpg",
+            pegi=12,
+            release_date=date(2017, 3, 3),
+            global_rating=10.07,
+            rating_count=2
+        )
+
+        with pytest.raises(ValidationError):
+            game.full_clean()
+
+    def test_game_global_rating_works_with_valid_values(self):
+        game = Game(
+            title="The Legend of Zelda",
+            description="classic fantasy rpg",
+            pegi=12,
+            release_date=date(2017, 3, 3),
+            global_rating=10.1,
+            rating_count=2
+        )
+
+    @pytest.mark.parametrize("ratings_list, expected_global_rating", [
+        ([10, 10, 8], 9.3),  # avg: 9.3333... -> rounded to: 9.3
+        ([1, 2], 1.5),  # 1.5 -> 1.5
+        ([10, 10], 10.0),  # 10.0 -> 10.0
+        ([5, 6, 7], 6.0),  # 6.0 -> no rounding
+        ([1, 1, 2], 1.3),  # 1.3333... -> 1.3
+    ])
+    def test_game_global_rating_is_always_rounded_correctly(self, games, ratings_list, expected_global_rating):
+        game = games[0]
+
+        # given the fact that the game is fixed I need to create a different user for each value because a user can add a game as played just 1 time
+        for rating in ratings_list:
+            player = mixer.blend(get_user_model())
+            GamePlayed.objects.create(owner=player, game=game, rating=rating)
+
+        game.refresh_from_db()
+
+        assert float(game.global_rating) == expected_global_rating

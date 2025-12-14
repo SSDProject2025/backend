@@ -1,6 +1,8 @@
 from fiordispino.core.exceptions import *
 from valid8 import validate
 from .utils import *
+from decimal import Decimal
+from typing import Union
 
 @typechecked
 def validate_publisher(value: str) -> None:
@@ -74,7 +76,7 @@ def validate_game_description(value: str) -> None:
 
 
 @typechecked
-def validate_global_rating(value: float) -> None:
+def validate_global_rating(value: Union[float, Decimal]) -> None:
     try:
         validate("global_rating", value, min_value=0.0, max_value=10.0)
     except:

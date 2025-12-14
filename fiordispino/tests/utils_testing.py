@@ -12,9 +12,10 @@ from rest_framework.test import APIClient
 @pytest.fixture
 def games(db):
     return [
-        mixer.blend('fiordispino.Game', title='Dragon Quest V'),
-        mixer.blend('fiordispino.Game', title='Cybperunk'),
-        mixer.blend('fiordispino.Game', title='GTA VI'),
+        # fields like title and global_rating are fixed because mixer tends to create values that fails to respect validation rules
+        mixer.blend('fiordispino.Game', title='Dragon Quest V', global_rating=0.0),
+        mixer.blend('fiordispino.Game', title='Cybperunk', global_rating=5.5),
+        mixer.blend('fiordispino.Game', title='GTA VI', global_rating=9.9),
     ]
 
 

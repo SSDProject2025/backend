@@ -49,14 +49,14 @@ class GamesToPlayViewSet(viewsets.ModelViewSet):
     serializer_class = GamesToPlaySerializer
 
     def perform_create(self, serializer):
-        user = self.request.user
+        user_ = self.request.user
         game_ = serializer.validated_data['game']
 
         # do not add the game if it is already in the games played entity
-        if GamePlayed.objects.filter(owner=user, game=game_).exists():
+        if GamePlayed.objects.filter(owner=user_, game=game_).exists():
             raise GameAlreadyInGamesPlayed()
 
-        serializer.save(owner=user)
+        serializer.save(owner=user_)
 
     # this custom endpoint is used to easily switch a game to the other table
     @action(detail=True, methods=['post'], url_path='move-in-played')
@@ -127,10 +127,10 @@ class RegisterView(APIView):
         serializer = RegisterSerializer(data=data)
 
         if serializer.is_valid():
-            user = serializer.save()
+            user_ = serializer.save()
 
             # Crea o recupera il token
-            token, created = Token.objects.get_or_create(user=user)
+            token, created = Token.objects.get_or_create(user=user_)
 
             return Response({
                 'key': token.key
@@ -152,10 +152,10 @@ class LoginView(APIView):
         email = serializer.validated_data['email']
         password = serializer.validated_data['password']
 
-        user = authenticate(request, username=email, password=password)
+        user_ = authenticate(request, username=email, password=password)
 
-        if user:
-            token, created = Token.objects.get_or_create(user=user)
+        if user_:
+            token, created = Token.objects.get_or_create(user=user_)
             return Response({'key': token.key}, status=status.HTTP_200_OK)
 
         return Response(
