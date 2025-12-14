@@ -129,7 +129,6 @@ ACCOUNT_EMAIL_VERIFICATION = 'none'
 ACCOUNT_Preserve_USERNAME_CASING = False
 
 AUTHENTICATION_BACKENDS = [
-    'fiordispino.authentication.EmailBackend',
     'allauth.account.auth_backends.AuthenticationBackend',
 ]
 
