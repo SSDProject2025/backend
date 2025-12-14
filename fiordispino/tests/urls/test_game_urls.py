@@ -1,56 +1,86 @@
-import pytest
-from django.urls import reverse, resolve
-from rest_framework.test import APIClient
+from django.urls import reverse
 from rest_framework import status
-from mixer.backend.django import mixer
-from fiordispino.models import Game
+
+from fiordispino.tests.utils_testing import *
 
 
 @pytest.mark.django_db
 class TestGameUrl:
 
-    @pytest.fixture
-    def client(self):
-        return APIClient()
+    # --- USER TESTS (Read Only) ---
 
-    @pytest.fixture
-    def game(self):
-        # Creates a single Game instance with random data
-        return mixer.blend(Game, title="Test Game")
-
-    def test_game_list_url_resolves(self):
-        # The router creates 'game-list' automatically
+    def test_games_user_can_see(self, user):
         path = reverse('game-list')
+        client = get_client(user=user)
+        response = client.get(path)
+        assert response.status_code == status.HTTP_200_OK
+        obj = parse(response)
+        assert obj is not None
 
-        # Assert that the path is resolved correctly to the viewset
-        assert resolve(path).view_name == 'game-list'
+    def test_games_user_can_see_specific_game(self, games, user):
+        path = reverse('game-detail', kwargs={'pk': games[0].id})
+        client = get_client(user=user)
+        response = client.get(path)
+        assert response.status_code == status.HTTP_200_OK
+        obj = parse(response)
+        assert obj is not None
 
-    def test_game_detail_url_resolves(self, game):
-        # The router creates 'game-detail' taking a pk
-        path = reverse('game-detail', kwargs={'pk': game.pk})
+    # --- USER TESTS (Forbidden Actions) ---
 
-        assert resolve(path).view_name == 'game-detail'
-
-    def test_get_game_list(self, client):
-        # Create dummy data. Mixer automatically fills required fields
-        # (title, pegi, etc.) with random valid data. I hardcode the name to respect length limits
-        mixer.blend(Game, title="Super Mario")
-        mixer.blend(Game, title="Sonic")
-        mixer.blend(Game, title="Tetris")
-
+    def test_games_non_admin_cant_add(self, game_data, user):
         path = reverse('game-list')
-        response = client.get(path)
+        client = get_client(user=user)
 
+        response = client.post(path, game_data)
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+
+    def test_games_non_admin_cant_delete(self, games, user):
+        path = reverse('game-detail', kwargs={'pk': games[0].id})
+        client = get_client(user=user)
+        response = client.delete(path)
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+
+    def test_games_non_admin_cant_update(self, games, game_data, user):
+        path = reverse('game-detail', kwargs={'pk': games[0].id})
+        client = get_client(user=user)
+
+        response = client.put(path, game_data)
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+
+    # --- ADMIN TESTS (Full Access) ---
+
+    def test_admin_can_see(self, admin_user):
+        path = reverse('game-list')
+        admin = get_admin(admin_user)
+        response = admin.get(path)
         assert response.status_code == status.HTTP_200_OK
-        assert len(response.json()) == 3
+        obj = parse(response)
+        assert obj is not None
 
-    def test_get_game_detail(self, client, game):
-        # Get a specific game via primary key
-        path = reverse('game-detail', kwargs={'pk': game.pk})
-        response = client.get(path)
-
+    def test_admin_can_see_specific_game(self, games, admin_user):
+        path = reverse('game-detail', kwargs={'pk': games[0].id})
+        admin = get_admin(admin_user)
+        response = admin.get(path)
         assert response.status_code == status.HTTP_200_OK
+        obj = parse(response)
+        assert obj is not None
 
-        # Verify the data returned matches the fixture
-        # (Assuming your GameSerializer returns the title field)
-        assert response.json()['title'] == game.title
+    def test_admin_can_add(self, admin_user, game_data):
+        path = reverse('game-list')
+        admin = get_admin(admin_user)
+
+        response = admin.post(path, game_data)
+        assert response.status_code == status.HTTP_201_CREATED
+
+    def test_admin_can_delete(self, admin_user, games):
+        path = reverse('game-detail', kwargs={'pk': games[0].id})
+        admin = get_admin(admin_user)
+        response = admin.delete(path)
+        assert response.status_code == status.HTTP_204_NO_CONTENT
+
+    def test_admin_can_update(self, admin_user, games, game_data):
+        path = reverse('game-detail', kwargs={'pk': games[0].id})
+        admin = get_admin(admin_user)
+
+        response = admin.put(path, game_data, format='multipart')
+        assert response.status_code == status.HTTP_200_OK

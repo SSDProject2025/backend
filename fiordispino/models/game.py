@@ -1,5 +1,4 @@
 from django.db import models
-from django.contrib.auth import get_user_model
 
 from fiordispino.models import Genre
 from fiordispino.core.validators import *
@@ -24,6 +23,10 @@ class Game(models.Model):
     box_art = models.ImageField(upload_to=build_path)
     description = models.TextField(validators=[validate_game_description])
     title = models.TextField(validators=[validate_title])
+    global_rating = models.DecimalField(default=0.0, max_digits=3, decimal_places=1, validators=[validate_global_rating])
+
+    # to count how many players reviewed it. No need for custom validation, it's implicit thanks to PositiveInteger
+    rating_count = models.PositiveIntegerField(default=0)
 
     # many-to-many relation: a game has (can have) more than 1 genre; a genre is (can be) associated to more than 1 game
     genres = models.ManyToManyField(Genre, related_name='games')

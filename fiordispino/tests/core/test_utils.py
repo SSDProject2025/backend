@@ -1,7 +1,12 @@
 import pytest
 import re
 
-from fiordispino.core.utils import pattern
+from fiordispino.core.utils import pattern, encode_image_to_base64
+import pytest
+import base64
+from django.core.files.uploadedfile import SimpleUploadedFile
+from mixer.backend.django import mixer
+from fiordispino.core.exceptions import ImageEncoderException
 
 class TestPatternUtility:
 
@@ -44,3 +49,50 @@ class TestPatternUtility:
     def test_various_patterns_via_parametrization(self, regex, value, expected):
         validator = pattern(regex)
         assert validator(value) is expected
+
+
+@pytest.mark.django_db
+class TestImageEncoder:
+
+    def test_encode_valid_image_success(self):
+        # these raw bytes represent a 1x1 image
+        small_gif_content = (
+            b'\x47\x49\x46\x38\x39\x61\x01\x00\x01\x00\x80\x00\x00\xff\x00\x00'
+            b'\x00\x00\x00\x21\xf9\x04\x01\x00\x00\x00\x00\x2c\x00\x00\x00\x00'
+            b'\x01\x00\x01\x00\x00\x02\x02\x44\x01\x00\x3b'
+        )
+
+        # upload the file in memory so that django accept it
+        image_file = SimpleUploadedFile(
+            name='test_image.gif',
+            content=small_gif_content,
+            content_type='image/gif'
+        )
+
+        # the title is necessary because the image will have the game's name in path, if mixer genereates a name which is too long the operation
+        # will be considered as suspicious and aborted
+        game = mixer.blend('fiordispino.Game', title="game" , box_art=image_file, global_rating=5.0)
+
+        result = encode_image_to_base64(game.box_art)
+
+        expected_base64 = base64.b64encode(small_gif_content).decode('utf-8')
+
+        assert isinstance(result, str)
+        assert result == expected_base64
+
+    def test_encode_raises_exception_if_field_is_empty(self):
+        game = mixer.blend('fiordispino.Game', title="title", box_art=None, global_rating=5.0)
+
+        with pytest.raises(ImageEncoderException):
+            encode_image_to_base64(game.box_art)
+
+    def test_encode_raises_generic_exception_on_io_error(self):
+        # if the game is not present in memory throw an exception
+
+        image_file = SimpleUploadedFile("test.jpg", b"dummy_content", content_type="image/jpeg")
+        game = mixer.blend('fiordispino.Game', title="title", box_art=image_file, global_rating=5.0)
+
+        game.box_art.storage.delete(game.box_art.name)
+
+        with pytest.raises(ImageEncoderException):
+            encode_image_to_base64(game.box_art)
