@@ -76,3 +76,16 @@ class TestGameModel:
         expected_path = os.path.join('games', 'covers', expected_filename)
 
         assert generated_path == expected_path
+
+    def test_game_rating_count_cant_be_negative(self):
+        game = Game(
+            title="Dragon quest V",
+            description="classic fantasy rpg",
+            pegi=12,
+            release_date=date(2017, 3, 3),
+            global_rating=10.0,
+            rating_count=-1
+        )
+
+        with pytest.raises(ValidationError):
+            game.full_clean()
