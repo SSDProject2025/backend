@@ -5,6 +5,7 @@ from fiordispino.permissions import *
 
 admin.site.register(Genre)
 admin.site.register(Game)
+admin.site.register(User)
 
 # The admin should just visualize libraries, not create/edit/delete
 @admin.register(GamesToPlay)
