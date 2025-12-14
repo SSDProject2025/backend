@@ -72,3 +72,10 @@ class GameAlreadyInGamesPlayed(APIException):
 ### GLOBAL RATING ####
 class GlobalRatingException(ValidationError):
     help_message = "Error in creating global rating"
+
+
+### IMAGE TO BASE64 ENCODER ###
+class ImageEncoderException(APIException):
+    status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
+    default_detail = "Error in creating box art image"
+    default_code = 'image_encoder_error'
