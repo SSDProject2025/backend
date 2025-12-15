@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user_model, authenticate
+from django.core.exceptions import ValidationError
 from django.db import transaction
 from rest_framework import viewsets
 from rest_framework.decorators import action
@@ -17,6 +18,8 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.authtoken.models import Token
 from rest_framework.permissions import AllowAny
+
+from django.contrib.auth.validators import ASCIIUsernameValidator
 
 '''
 class GenreList(generics.ListCreateAPIView):
@@ -58,6 +61,25 @@ class GamesToPlayViewSet(viewsets.ModelViewSet):
 
         serializer.save(owner=user_)
 
+    # to capture the username I need a regex that says -> take everything till you meet a '/' ora a '.'
+    @action(detail=False, methods=['get'], url_path=r'owner/(?P<username>[^/.]+)')
+    def get_by_owner(self, request, username=None):
+
+        validator = ASCIIUsernameValidator() # default django username validator -> the same used in the User class
+        try:
+            validator(username)
+        except ValidationError:
+            return Response(
+                {"detail": "Invalid username format."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        games = GamesToPlay.objects.filter(owner__username=username)
+
+        serializer_ = self.get_serializer(games, many=True)
+        return Response(serializer_.data, status=status.HTTP_200_OK)
+
+
     # this custom endpoint is used to easily switch a game to the other table
     @action(detail=True, methods=['post'], url_path='move-in-played')
     def move_to_played(self, request, pk=None):
@@ -89,15 +111,15 @@ class GamePlayedViewSet(viewsets.ModelViewSet):
     serializer_class = GamesPlayedSerializer
 
     def perform_create(self, serializer):
-        user = self.request.user
+        user_ = self.request.user
         game_ = serializer.validated_data['game']
 
         # do not add the game if it is already in the games to play entity
-        if GamesToPlay.objects.filter(owner=user, game=game_).exists():
+        if GamesToPlay.objects.filter(owner=user_, game=game_).exists():
             raise GameAlreadyInGamesToPlay()
 
         # Se il controllo passa, salva iniettando l'owner
-        serializer.save(owner=user)
+        serializer.save(owner=user_)
 
     @action(detail=True, methods=['post'], url_path='move-in-to-play')
     def move_to_backlog(self, request, pk=None):

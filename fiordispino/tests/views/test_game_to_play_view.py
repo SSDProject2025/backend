@@ -92,3 +92,35 @@ class TestGamesToPlayView:
 
         data = parse(response)
         assert GameAlreadyInGamesPlayed.default_detail in str(data)
+
+    
+    def test_get_by_owner_should_fail_with_invalid_username(self, user):
+
+        evil_username = "' OR '1'='1'" # classic sql injection code
+        url = reverse('games-to-play-get-by-owner', kwargs={'username': evil_username})
+        client = get_client(user)
+        response = client.get(url)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+    def test_get_by_owner_success(self, user, games):
+        GamesToPlay.objects.create(owner=user, game=games[0])
+
+        client = get_client(user)
+        url = reverse('games-to-play-get-by-owner', kwargs={'username': user.username})
+
+        response = client.get(url)
+
+        assert response.status_code == status.HTTP_200_OK
+
+        data = parse(response)
+
+        assert len(data) == 1
+
+    def test_get_by_owner_with_empty_list(self, user):
+        client = get_client(user)
+        url = reverse('games-to-play-get-by-owner', kwargs={'username': user.username})
+        response = client.get(url)
+        assert response.status_code == status.HTTP_200_OK
+        data = parse(response)
+        assert len(data) == 0
