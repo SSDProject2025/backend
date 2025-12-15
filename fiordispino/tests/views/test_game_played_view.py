@@ -74,3 +74,35 @@ class TestGamePlayedView:
 
         data = parse(response)
         assert GameAlreadyInGamesToPlay.default_detail in str(data)
+
+    def test_get_by_owner_success(self, user, games):
+        GamePlayed.objects.create(owner=user, game=games[0], rating=10)
+        client = get_client(user)
+        url = reverse('games-played-get-by-owner', kwargs={'username': user.username})
+        response = client.get(url)
+        assert response.status_code == status.HTTP_200_OK
+        data = parse(response)
+        assert len(data) == 1
+
+
+    def test_get_by_owner_returns_empty_list_if_no_games(self, user):
+        client = get_client(user)
+        url = reverse('games-played-get-by-owner', kwargs={'username': user.username})
+
+        response = client.get(url)
+
+        assert response.status_code == status.HTTP_200_OK
+        data = parse(response)
+        assert data == []
+
+    def test_get_by_owner_invalid_username_format(self, user):
+        client = get_client(user)
+        bad_username = "bad!user"
+
+        url = reverse('games-played-get-by-owner', kwargs={'username': bad_username})
+
+        response = client.get(url)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+        assert "Invalid username" in str(response.data)

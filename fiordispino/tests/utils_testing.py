@@ -36,6 +36,14 @@ def games_to_play(db, games):
     ]
 
 @pytest.fixture
+def games_played(db, games):
+    return [
+        mixer.blend('fiordispino.GamePlayed', game=games[0]),
+        mixer.blend('fiordispino.GamePlayed', game=games[0]),
+        mixer.blend('fiordispino.GamePlayed', game=games[0]),
+    ]
+
+@pytest.fixture
 def genre(db):
     return mixer.blend('fiordispino.Genre')
 
@@ -71,6 +79,13 @@ def game_data(db, genre):
 def games_to_play_data(db, games):
     return {
         'game': games[0].pk
+    }
+
+@pytest.fixture
+def game_played_data(db, games):
+    return {
+        'game': games[0].pk,
+        'rating': 5.5,
     }
 
 @pytest.fixture
