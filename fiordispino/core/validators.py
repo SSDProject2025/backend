@@ -1,8 +1,10 @@
 from fiordispino.core.exceptions import *
-from valid8 import validate
+from valid8 import validate, ValidationError as Valid8Err
 from .utils import *
 from decimal import Decimal
 from typing import Union
+from django.contrib.auth.validators import ASCIIUsernameValidator
+from django.core.exceptions import ValidationError
 
 @typechecked
 def validate_publisher(value: str) -> None:
@@ -16,7 +18,7 @@ def validate_publisher(value: str) -> None:
 
     try:
         validate("publisher", value, min_len=1, max_len=100, custom=pattern(r'[a-zA-Z0-9\s]*'))
-    except:
+    except Valid8Err:
         raise PublisherException("Invalid publisher, please note that special characters are not allowed")
 
 
@@ -24,7 +26,7 @@ def validate_publisher(value: str) -> None:
 def validate_pegi(value: int) -> None:
     try:
         validate("pegi_ranking", value, is_in=[3, 7, 12, 16, 18])
-    except:
+    except Valid8Err:
         raise PegiException("Please note that pegi must be a value in: 3, 7, 12, 16, 18")
 
 
@@ -32,7 +34,7 @@ def validate_pegi(value: int) -> None:
 def validate_vote(value: int) -> None:
     try:
         validate("vote", value, min_value=1, max_value=10)
-    except:
+    except Valid8Err:
         raise VoteException("Please note that vote must be an integer between 1 and 10 (extremes inclusive)")
 
 
@@ -43,7 +45,7 @@ def validate_title(value: str) -> None:
 
     try:
         validate("title", value, min_len=1, max_len=100, custom=pattern(r'[a-zA-Z0-9\s:]*'))
-    except:
+    except Valid8Err:
         raise GameTitleException("Invalid title, please please keep it under 100 characters and note the special characters are not allowed")
 
 
@@ -57,7 +59,7 @@ def validate_genre(value: str) -> None:
 
     try:
         validate("genre", value, min_len=1, max_len=100, custom=pattern(r'[a-zA-Z\s]*'))
-    except:
+    except Valid8Err:
         raise GenreException("Invalid genre, please note that special characters and numbers are not allowed")
 
 @typechecked
@@ -71,7 +73,7 @@ def validate_game_description(value: str) -> None:
     try:
         # this regex includes many characters for different alphabets, numbers, spaces, punctuation and limits special characters
         validate("game_description", value, min_len=1, max_len=200, custom=pattern(r'^[\w\s!,;:.?\'"()-]*$'))
-    except:
+    except Valid8Err:
         raise GameDescriptionException("Invalid game description note that some characters are not allowed")
 
 
@@ -79,5 +81,13 @@ def validate_game_description(value: str) -> None:
 def validate_global_rating(value: Union[float, Decimal]) -> None:
     try:
         validate("global_rating", value, min_value=0.0, max_value=10.0)
-    except:
+    except Valid8Err:
         raise GlobalRatingException("Global rating must be a value between 0 and 10")
+
+@typechecked
+def validate_username(value: str) -> None:
+    validator = ASCIIUsernameValidator() # django default username validator
+    try:
+        validator(value)
+    except ValidationError:
+        raise UsernameValidationError({"detail": "Invalid username format."})

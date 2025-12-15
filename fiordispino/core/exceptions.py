@@ -79,3 +79,10 @@ class ImageEncoderException(APIException):
     status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
     default_detail = "Error in creating box art image"
     default_code = 'image_encoder_error'
+
+
+### USERNAME ###
+class UsernameValidationError(APIException):
+    status_code = status.HTTP_400_BAD_REQUEST
+    default_detail = "Invalid username"
+    default_code = 'username_error'
