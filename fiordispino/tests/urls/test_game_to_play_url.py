@@ -112,3 +112,15 @@ class TestGameToPlayUrl:
 
         response = admin.put(path, data)
         assert response.status_code == status.HTTP_403_FORBIDDEN
+
+    # --- ANONYMOUS TESTS (No Access) ---
+
+    def test_anonymous_user_cannot_see_games(self, games_to_play):
+        target_entry = games_to_play[0]
+        path = reverse('games-to-play-detail', kwargs={'pk': target_entry.id})
+
+        client = get_client()  # No user = Anonymous
+
+        response = client.get(path)
+        # Fails IsAuthenticated check -> 401
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED

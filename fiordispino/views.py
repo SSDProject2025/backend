@@ -19,6 +19,8 @@ from rest_framework import status
 from rest_framework.authtoken.models import Token
 from rest_framework.permissions import AllowAny
 
+from rest_framework.permissions import IsAuthenticated
+
 from fiordispino.core.validators import validate_username
 
 '''
@@ -47,7 +49,9 @@ class GameViewSet(viewsets.ModelViewSet):
 
 # do retrieve to check for game in libraries
 class GamesToPlayViewSet(viewsets.ModelViewSet):
-    permission_classes = [permissions.IsOwnerOrReadOnly]
+
+    # you can see other users' libraries only if you are authenticated
+    permission_classes = [IsAuthenticated, permissions.IsOwnerOrReadOnly]
     queryset = GamesToPlay.objects.all()
     serializer_class = GamesToPlaySerializer
 
@@ -99,7 +103,7 @@ class GamesToPlayViewSet(viewsets.ModelViewSet):
         return Response(status=status.HTTP_200_OK)
 
 class GamePlayedViewSet(viewsets.ModelViewSet):
-    permission_classes = [permissions.IsOwnerOrReadOnly]
+    permission_classes = [IsAuthenticated, permissions.IsOwnerOrReadOnly]
     queryset = GamePlayed.objects.all()
     serializer_class = GamesPlayedSerializer
 

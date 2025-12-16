@@ -2,6 +2,7 @@ import pytest
 from django.urls import reverse
 from rest_framework import status
 from mixer.backend.django import mixer
+from django.contrib.auth import get_user_model
 from fiordispino.models import GamePlayed
 from fiordispino.tests.utils_testing import *
 
@@ -43,25 +44,29 @@ class TestGamePlayedUrl:
         assert response.status_code == status.HTTP_200_OK
         assert response.data['rating'] == 10
 
-    def test_user_can_see(self, user):
+    def test_user_can_see_own_games(self, user):
         path = reverse('games-played-list')
         client = get_client(user)
 
         response = client.get(path)
         assert response.status_code == status.HTTP_200_OK
 
-    # --- STRANGER TESTS (Read Only) ---
+    # --- AUTHENTICATED STRANGER TESTS (Read Only) ---
 
-    def test_stranger_can_see_others_games(self, games):
-        target_entry = mixer.blend('fiordispino.GamePlayed', game=games[0], rating=5)
+    def test_auth_stranger_can_see_others_games(self, games):
+        owner = mixer.blend(get_user_model())
+        stranger = mixer.blend(get_user_model())
+
+        target_entry = mixer.blend('fiordispino.GamePlayed', owner=owner, game=games[0], rating=5)
 
         path = reverse('games-played-detail', kwargs={'pk': target_entry.id})
-        client = get_client() # Unauthenticated / Stranger
+
+        client = get_client(stranger)
 
         response = client.get(path)
         assert response.status_code == status.HTTP_200_OK
 
-    def test_stranger_cant_delete_others_games(self, games, user):
+    def test_auth_stranger_cant_delete_others_games(self, games, user):
         target_entry = mixer.blend('fiordispino.GamePlayed', game=games[0])
 
         path = reverse('games-played-detail', kwargs={'pk': target_entry.id})
@@ -70,7 +75,7 @@ class TestGamePlayedUrl:
         response = client.delete(path)
         assert response.status_code == status.HTTP_403_FORBIDDEN
 
-    def test_stranger_cant_update_others_games(self, games, user):
+    def test_auth_stranger_cant_update_others_games(self, games, user):
         target_entry = mixer.blend('fiordispino.GamePlayed', game=games[0])
         path = reverse('games-played-detail', kwargs={'pk': target_entry.id})
 
@@ -80,7 +85,18 @@ class TestGamePlayedUrl:
         response = client.put(path, data)
         assert response.status_code == status.HTTP_403_FORBIDDEN
 
-    # --- ADMIN TESTS (Read Only constraint) ---
+    # --- ANONYMOUS TESTS (No Access) ---
+
+    def test_anonymous_user_cannot_see_games(self, games):
+        target_entry = mixer.blend('fiordispino.GamePlayed', game=games[0])
+        path = reverse('games-played-detail', kwargs={'pk': target_entry.id})
+
+        client = get_client()
+
+        response = client.get(path)
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+    # --- ADMIN TESTS ---
 
     def test_admin_can_see(self, admin_user):
         path = reverse('games-played-list')
