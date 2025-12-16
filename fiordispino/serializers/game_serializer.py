@@ -7,7 +7,7 @@ class GameSerializer(serializers.ModelSerializer):
 
 
     class Meta:
-        fields = ("id", "box_art", "description", "title", "genres", "pegi", "release_date")
+        fields = ("id", "box_art", "description", "title", "genres", "pegi", "release_date", "global_rating", "rating_count")
         model = Game
 
     def to_representation(self, instance):
