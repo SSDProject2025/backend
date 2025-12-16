@@ -3,7 +3,7 @@ from io import BytesIO
 from PIL import Image
 from rest_framework import status
 from rest_framework.reverse import reverse
-from rest_framework.test import APIRequestFactory, force_authenticate  # Importante: importa force_authenticate
+from rest_framework.test import APIRequestFactory, force_authenticate
 from django.core.files.uploadedfile import SimpleUploadedFile
 from mixer.backend.django import mixer
 from django.contrib.auth import get_user_model

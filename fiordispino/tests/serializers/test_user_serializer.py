@@ -1,6 +1,6 @@
 import pytest
 from django.contrib.auth import get_user_model
-from fiordispino.serializers.user_serializer import RegisterSerializer
+from fiordispino.serializers.register_serializers import RegisterSerializer
 
 User = get_user_model()
 

@@ -28,7 +28,9 @@ from rest_framework.permissions import AllowAny
 
 from rest_framework.permissions import IsAuthenticated
 
-from fiordispino.serializers.user_serializer import RegisterSerializer, LoginSerializer, UserSerializer
+from fiordispino.serializers.register_serializers import RegisterSerializer
+from fiordispino.serializers.register_serializers import RegisterSerializer
+from fiordispino.serializers.user_serializer import UserSerializer
 from fiordispino.core.validators import validate_username, validate_random_games_limit
 from fiordispino.permissions import IsAdminUnlessMe
 
