@@ -174,6 +174,10 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+REST_AUTH = {
+    'USER_DETAILS_SERIALIZER': 'fiordispino.serializers.user_serializer.UserSerializer',
+}
+
 
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/

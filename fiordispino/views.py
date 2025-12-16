@@ -11,12 +11,23 @@ from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiPara
 from rest_framework import serializers
 
 from fiordispino.models import *
-from fiordispino.serializers import GenreSerializer
+from fiordispino.serializers.genre_serializers import GenreSerializer
 from fiordispino.serializers.game_serializer import GameSerializer
 from fiordispino import permissions as custom_permissions
 from fiordispino.serializers.games_to_play_serializer import GamesToPlaySerializer
 from fiordispino.serializers.games_played_serializer import GamesPlayedSerializer
 from fiordispino.core.exceptions import GameAlreadyInGamesToPlay, GameAlreadyInGamesPlayed
+from fiordispino.serializers.login_serializers import LoginSerializer
+from fiordispino.serializers.register_serializers import RegisterSerializer
+from fiordispino.serializers.user_serializer import UserSerializer
+
+from rest_framework.response import Response
+from rest_framework import status
+from rest_framework.authtoken.models import Token
+from rest_framework.permissions import AllowAny
+
+from rest_framework.permissions import IsAuthenticated
+
 from fiordispino.serializers.user_serializer import RegisterSerializer, LoginSerializer, UserSerializer
 from fiordispino.core.validators import validate_username, validate_random_games_limit
 from fiordispino.permissions import IsAdminUnlessMe
