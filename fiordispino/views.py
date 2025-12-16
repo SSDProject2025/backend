@@ -12,7 +12,7 @@ from fiordispino import permissions
 from fiordispino.serializers.games_to_play_serializer import GamesToPlaySerializer
 from fiordispino.serializers.games_played_serializer import GamesPlayedSerializer
 from fiordispino.core.exceptions import GameAlreadyInGamesToPlay, GameAlreadyInGamesPlayed
-from fiordispino.serializers.user_serializer import RegisterSerializer, LoginSerializer
+from fiordispino.serializers.user_serializer import RegisterSerializer, LoginSerializer, UserSerializer
 
 from rest_framework.response import Response
 from rest_framework import status
@@ -191,3 +191,14 @@ class LoginView(APIView):
             {'error': 'Invalid credentials'},
             status=status.HTTP_401_UNAUTHORIZED
         )
+
+class UserViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated]
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+
+    # Endpoint: /api/v1/users/me/
+    @action(detail=False, methods=['get'], url_path='me')
+    def get_current_user_data(self, request):
+        serializer = self.get_serializer(request.user)
+        return Response(serializer.data, status=status.HTTP_200_OK)
