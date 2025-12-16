@@ -6,13 +6,15 @@ from rest_framework.decorators import action
 from rest_framework.views import APIView
 
 from fiordispino.models import *
-from fiordispino.serializers import GenreSerializer
+from fiordispino.serializers.genre_serializers import GenreSerializer
 from fiordispino.serializers.game_serializer import GameSerializer
 from fiordispino import permissions
 from fiordispino.serializers.games_to_play_serializer import GamesToPlaySerializer
 from fiordispino.serializers.games_played_serializer import GamesPlayedSerializer
 from fiordispino.core.exceptions import GameAlreadyInGamesToPlay, GameAlreadyInGamesPlayed
-from fiordispino.serializers.user_serializer import RegisterSerializer, LoginSerializer, UserSerializer
+from fiordispino.serializers.login_serializers import LoginSerializer
+from fiordispino.serializers.register_serializers import RegisterSerializer
+from fiordispino.serializers.user_serializer import UserSerializer
 
 from rest_framework.response import Response
 from rest_framework import status
