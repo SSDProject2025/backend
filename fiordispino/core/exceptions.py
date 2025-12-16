@@ -93,3 +93,9 @@ class InvalidNumberOfGamesException(APIException):
      status_code = status.HTTP_400_BAD_REQUEST
      default_detail = "Number of games must be between 1 and 20"
      default_code = 'invalid_n_games'
+
+### IMAGES FORMAT ###
+class InvalidImageFormatException(APIException):
+    status_code = status.HTTP_400_BAD_REQUEST
+    default_detail = "Please provide jpg format"
+    default_code = 'invalid_image_format'

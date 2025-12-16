@@ -5,6 +5,7 @@ from decimal import Decimal
 from typing import Union
 from django.contrib.auth.validators import ASCIIUsernameValidator
 from django.core.exceptions import ValidationError
+from django.core.files import File
 
 @typechecked
 def validate_publisher(value: str) -> None:
@@ -103,3 +104,8 @@ def validate_random_games_limit(value: str) -> None:
         validate("n_games", n_games, min_value=1, max_value=20)
     except (Valid8Err, ValueError, TypeError):
         raise InvalidNumberOfGamesException()
+
+@typechecked
+def validate_box_art(value: File) -> None:
+    if not value.name.lower().endswith('.jpg'):
+        raise InvalidImageFormatException
