@@ -21,7 +21,7 @@ from rest_framework.permissions import AllowAny
 
 from rest_framework.permissions import IsAuthenticated
 
-from fiordispino.core.validators import validate_username
+from fiordispino.core.validators import validate_username, validate_random_games_limit
 
 '''
 class GenreList(generics.ListCreateAPIView):
@@ -44,7 +44,17 @@ class GameViewSet(viewsets.ModelViewSet):
     queryset = Game.objects.all()
     serializer_class = GameSerializer
 
-    # add method to serialize image in base 64
+    @action(detail=False, methods=['get'], url_path='random-games')
+    def get_random_games(self, request):
+        raw_n = request.query_params.get('n_games', "5") # default to 5 if no value passed -> it's a string because the validator expect a string from the api
+
+        validate_random_games_limit(raw_n)
+
+        n_games = int(raw_n)
+
+        games = Game.objects.order_by('?')[:n_games]
+        serializer = self.get_serializer(games, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 # do retrieve to check for game in libraries

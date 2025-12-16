@@ -91,3 +91,15 @@ def validate_username(value: str) -> None:
         validator(value)
     except ValidationError:
         raise UsernameValidationError({"detail": "Invalid username format."})
+
+@typechecked
+def validate_random_games_limit(value: str) -> None:
+    try:
+        # from the api you will receive a string value, first convert it to int, then validate it
+        n_games = int(value)
+
+        # at least 1 game
+        # at most 20 not to overload the db
+        validate("n_games", n_games, min_value=1, max_value=20)
+    except (Valid8Err, ValueError, TypeError):
+        raise InvalidNumberOfGamesException()

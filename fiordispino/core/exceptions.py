@@ -86,3 +86,10 @@ class UsernameValidationError(APIException):
     status_code = status.HTTP_400_BAD_REQUEST
     default_detail = "Invalid username"
     default_code = 'username_error'
+
+
+### RANDOM GAMES PARAMETER ###
+class InvalidNumberOfGamesException(APIException):
+     status_code = status.HTTP_400_BAD_REQUEST
+     default_detail = "Number of games must be between 1 and 20"
+     default_code = 'invalid_n_games'
