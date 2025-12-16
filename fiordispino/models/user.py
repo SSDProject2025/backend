@@ -1,7 +1,7 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from fiordispino.managers import CustomUserManager
-from django.contrib.auth.validators import ASCIIUsernameValidator
+from fiordispino.core.validators import validate_username
 
 class User(AbstractUser):
     email = models.EmailField(unique=True, verbose_name='Email')
@@ -11,7 +11,7 @@ class User(AbstractUser):
         unique=True,
         blank=False,
         null=False,
-        validators=[ASCIIUsernameValidator()],
+        validators=[validate_username],
         error_messages={
             'unique': "A user with that username already exists.",
         },
