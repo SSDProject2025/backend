@@ -39,6 +39,18 @@ class IsOwnerOrReadOnly(permissions.BasePermission):
         return obj.owner == request.user
 
 
+class IsAdminUnlessMe(permissions.BasePermission):
+    """
+    Specific permission class for the user endpoints, the logic is: every endpoint is reserved to the admin except for the one that returns info about me
+    """
+
+    def has_permission(self, request, view):
+        if view.action == 'get_current_user_data':
+            return bool(request.user and request.user.is_authenticated)
+
+        return bool(request.user and request.user.is_staff)
+
+
 # --- DJANGO ADMIN PERMISSIONS ---
 # these permissions are used in admin.py, meaning that they will never by covered by the coverage command.
 # Hence, we use pragma: no cover to tell coverage to ignore them
