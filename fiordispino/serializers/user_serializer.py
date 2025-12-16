@@ -7,7 +7,6 @@ from rest_framework.validators import UniqueValidator
 User = get_user_model()
 
 class RegisterSerializer(serializers.ModelSerializer):
-    username = serializers.CharField(required=True)
     password = serializers.CharField(write_only=True, style={'input_type': 'password'})
     password2 = serializers.CharField(write_only=True, style={'input_type': 'password'})
     email = serializers.EmailField(
