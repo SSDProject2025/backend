@@ -1,23 +1,23 @@
 from rest_framework import serializers
 
-from fiordispino.models import Game
+from fiordispino.models import Game, Genre
 from fiordispino.core.utils import encode_image_to_base64
 from fiordispino.serializers.genre_serializers import GenreSerializer
 
 
 class GameSerializer(serializers.ModelSerializer):
-    genres = GenreSerializer(many=True, read_only=True)
+    genres = serializers.PrimaryKeyRelatedField(
+        many=True,
+        queryset=Genre.objects.all()
+    )
 
     class Meta:
         fields = ("id", "box_art", "description", "title", "genres", "pegi", "release_date", "global_rating", "rating_count")
         model = Game
 
     def to_representation(self, instance):
-        # this method is called whenever the object has to be serialized to json
-        # it first serialize it normally and then overwrites the path to the image with the base64 version of the image
-
+        # Quando serializzi (GET), usa GenreSerializer per mostrare oggetti completi
         ret = super().to_representation(instance)
-
         ret['box_art'] = encode_image_to_base64(instance.box_art)
-
+        ret['genres'] = GenreSerializer(instance.genres.all(), many=True).data
         return ret
