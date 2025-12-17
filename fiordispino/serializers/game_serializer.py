@@ -2,9 +2,11 @@ from rest_framework import serializers
 
 from fiordispino.models import Game
 from fiordispino.core.utils import encode_image_to_base64
+from fiordispino.serializers.genre_serializers import GenreSerializer
+
 
 class GameSerializer(serializers.ModelSerializer):
-
+    genres = GenreSerializer(many=True, read_only=True)
 
     class Meta:
         fields = ("id", "box_art", "description", "title", "genres", "pegi", "release_date", "global_rating", "rating_count")
