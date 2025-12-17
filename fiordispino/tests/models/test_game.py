@@ -151,5 +151,5 @@ class TestGameModel:
             box_art=png_file
         )
 
-        with pytest.raises(InvalidImageFormatException):
+        with pytest.raises(ValidationError):
             game.full_clean()

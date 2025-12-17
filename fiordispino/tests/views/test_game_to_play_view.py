@@ -124,3 +124,38 @@ class TestGamesToPlayView:
         assert response.status_code == status.HTTP_200_OK
         data = parse(response)
         assert len(data) == 0
+
+    def test_create_duplicate_in_same_table_fails(self, user, games):
+        game = games[0]
+        # 1. Create the entry first manually
+        GamesToPlay.objects.create(owner=user, game=game)
+
+        client = get_client(user)
+        url = reverse('games-to-play-list')
+
+        # 2. Try to add the same game again via API
+        payload = {'game': game.id}
+        response = client.post(url, payload)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+    def test_move_to_played_fails_if_destination_exists(self, user, games):
+        game = games[0]
+
+        # Setup: The game is in "To Play" AND already in "Played"
+        entry_to_play = GamesToPlay.objects.create(owner=user, game=game)
+        GamePlayed.objects.create(owner=user, game=game, rating=10)
+
+        client = get_client(user)
+        url = reverse('games-to-play-move-to-played', kwargs={'pk': entry_to_play.pk})
+        payload = {'rating': 9}
+
+        # Action: Try to move it
+        response = client.post(url, payload)
+
+        # Expectation: 400 Bad Request (not 500 IntegrityError)
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+        # Ensure the original 'To Play' entry was NOT deleted because the move failed
+        assert GamesToPlay.objects.filter(pk=entry_to_play.pk).exists()
+

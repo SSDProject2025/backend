@@ -95,7 +95,5 @@ class InvalidNumberOfGamesException(APIException):
      default_code = 'invalid_n_games'
 
 ### IMAGES FORMAT ###
-class InvalidImageFormatException(APIException):
-    status_code = status.HTTP_400_BAD_REQUEST
-    default_detail = "Please provide jpg format"
-    default_code = 'invalid_image_format'
+class InvalidImageFormatException(ValidationError):
+    help_message = "Error in creating box art image, note that the image format must be jpg"

@@ -156,7 +156,3 @@ class TestGameView:
         response = client.get(url, {'n_games': invalid_input})
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
-
-        data = parse(response)
-
-        assert InvalidNumberOfGamesException.default_detail in str(data)

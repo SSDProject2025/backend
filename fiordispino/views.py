@@ -1,5 +1,6 @@
 from django.contrib.auth import get_user_model, authenticate
 from django.db import transaction
+# Rimosso IntegrityError dagli import perché non serve più
 from rest_framework import viewsets, status, permissions
 from rest_framework.decorators import action
 from rest_framework.views import APIView
@@ -8,9 +9,18 @@ from rest_framework.authtoken.models import Token
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework import serializers
 
-from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter, OpenApiTypes, inline_serializer, OpenApiExample
+# Swagger / OpenAPI modules
+from drf_spectacular.utils import (
+    extend_schema,
+    extend_schema_view,
+    OpenApiParameter,
+    OpenApiTypes,
+    inline_serializer,
+    OpenApiExample
+)
 
-from fiordispino.models import *
+# Project imports
+from fiordispino.models import Genre, Game, GamesToPlay, GamePlayed
 from fiordispino.serializers.genre_serializers import GenreSerializer
 from fiordispino.serializers.game_serializer import GameSerializer
 from fiordispino import permissions as custom_permissions
@@ -30,6 +40,7 @@ from fiordispino.core.docs_utils import (
 )
 
 User = get_user_model()
+
 
 # --- GENRE VIEWSET ---
 @extend_schema_view(
@@ -52,7 +63,8 @@ User = get_user_model()
     create=extend_schema(summary="Create a genre", description="Adds a new genre (Admin only)."),
     retrieve=extend_schema(summary="Retrieve genre details", description="Returns details of a specific genre."),
     update=extend_schema(summary="Update a genre", description="Updates a genre completely (Admin only)."),
-    partial_update=extend_schema(summary="Partially update a genre", description="Updates specific fields (Admin only)."),
+    partial_update=extend_schema(summary="Partially update a genre",
+                                 description="Updates specific fields (Admin only)."),
     destroy=extend_schema(summary="Delete a genre", description="Removes a genre (Admin only)."),
 )
 class GenreViewSet(viewsets.ModelViewSet):
@@ -66,12 +78,12 @@ class GenreViewSet(viewsets.ModelViewSet):
     list=extend_schema(
         summary="List all games",
         description="Returns a paginated list of all games.",
-        responses={200: GameDocsSerializer(many=True)} # Force Shadow Serializer for PEGI/Rating limits
+        responses={200: GameDocsSerializer(many=True)}
     ),
     create=extend_schema(
         summary="Create a game",
         description="Adds a new game to the database (Admin only). Note that the box_art MUST be jpg",
-        request=GameDocsSerializer, # Use Shadow Serializer for input validation docs
+        request=GameDocsSerializer,
         examples=[
             OpenApiExample(
                 'Game Create Payload',
@@ -92,7 +104,7 @@ class GenreViewSet(viewsets.ModelViewSet):
     retrieve=extend_schema(
         summary="Retrieve game details",
         description="Returns full details of a specific game.",
-        responses={200: GameDocsSerializer}, # Force Shadow Serializer
+        responses={200: GameDocsSerializer},
         examples=[
             OpenApiExample(
                 'Game Detail Example',
@@ -164,7 +176,6 @@ class GameViewSet(viewsets.ModelViewSet):
     list=extend_schema(
         summary="List 'Games to Play'",
         description="Returns the backlog list.",
-        # USES SHADOW SERIALIZER to show nested 'game' object
         responses={200: GamesToPlayResponseSerializer(many=True)}
     ),
     create=extend_schema(
@@ -181,7 +192,6 @@ class GameViewSet(viewsets.ModelViewSet):
     ),
     retrieve=extend_schema(
         summary="Retrieve entry details",
-        # USES SHADOW SERIALIZER to show nested 'game' object
         responses={200: GamesToPlayResponseSerializer}
     ),
     update=extend_schema(summary="Update entry"),
@@ -196,14 +206,20 @@ class GamesToPlayViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         user_ = self.request.user
         game_ = serializer.validated_data['game']
+
+        # 1. Check Conflict (already played)
         if GamePlayed.objects.filter(owner=user_, game=game_).exists():
             raise GameAlreadyInGamesPlayed()
+
+        # 2. Check Duplicate (already in backlog)
+        if GamesToPlay.objects.filter(owner=user_, game=game_).exists():
+            raise GameAlreadyInGamesToPlay("This game is already in your backlog.")
+
         serializer.save(owner=user_)
 
     @extend_schema(
         summary="Get games to play by owner",
         description="Returns the 'Games to Play' list for a specific user.",
-        # USES SHADOW SERIALIZER to show nested 'game' object
         responses={200: GamesToPlayResponseSerializer(many=True)}
     )
     @action(detail=False, methods=['get'], url_path=r'owner/(?P<username>[^/.]+)')
@@ -240,6 +256,10 @@ class GamesToPlayViewSet(viewsets.ModelViewSet):
         if rating is None:
             return Response({"detail": "Please provide a rating."}, status=status.HTTP_400_BAD_REQUEST)
 
+        # Check if already played
+        if GamePlayed.objects.filter(owner=game_to_play_instance.owner, game=game_to_play_instance.game).exists():
+            raise GameAlreadyInGamesPlayed()
+
         with transaction.atomic():
             GamePlayed.objects.create(
                 owner=game_to_play_instance.owner,
@@ -247,6 +267,7 @@ class GamesToPlayViewSet(viewsets.ModelViewSet):
                 rating=rating
             )
             game_to_play_instance.delete()
+
         return Response(status=status.HTTP_200_OK)
 
 
@@ -255,7 +276,6 @@ class GamesToPlayViewSet(viewsets.ModelViewSet):
     list=extend_schema(
         summary="List 'Games Played'",
         description="Returns finished games.",
-        # USES SHADOW SERIALIZER to show nested 'game' object + fixed rating
         responses={200: GamesPlayedResponseSerializer(many=True)}
     ),
     create=extend_schema(
@@ -283,7 +303,6 @@ class GamesToPlayViewSet(viewsets.ModelViewSet):
     ),
     retrieve=extend_schema(
         summary="Retrieve entry details",
-        # USES SHADOW SERIALIZER to show nested 'game' object + fixed rating
         responses={200: GamesPlayedResponseSerializer}
     ),
     update=extend_schema(summary="Update entry"),
@@ -298,14 +317,20 @@ class GamePlayedViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         user_ = self.request.user
         game_ = serializer.validated_data['game']
+
+        # 1. Check Conflict (already in backlog)
         if GamesToPlay.objects.filter(owner=user_, game=game_).exists():
             raise GameAlreadyInGamesToPlay()
+
+        # 2. Check Duplicate (already played)
+        if GamePlayed.objects.filter(owner=user_, game=game_).exists():
+            raise GameAlreadyInGamesPlayed("You have already reviewed this game.")
+
         serializer.save(owner=user_)
 
     @extend_schema(
         summary="Get played games by owner",
         description="Returns the 'Games Played' list for a specific user.",
-        # USES SHADOW SERIALIZER to show nested 'game' object + fixed rating
         responses={200: GamesPlayedResponseSerializer(many=True)}
     )
     @action(detail=False, methods=['get'], url_path=r'owner/(?P<username>[^/.]+)')
@@ -323,12 +348,18 @@ class GamePlayedViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'], url_path='move-in-to-play')
     def move_to_backlog(self, request, pk=None):
         played_instance = self.get_object()
+
+        # Check if already in backlog
+        if GamesToPlay.objects.filter(owner=played_instance.owner, game=played_instance.game).exists():
+            raise GameAlreadyInGamesToPlay()
+
         with transaction.atomic():
             GamesToPlay.objects.create(
                 owner=played_instance.owner,
                 game=played_instance.game
             )
             played_instance.delete()
+
         return Response(status=status.HTTP_200_OK)
 
 
@@ -348,8 +379,8 @@ class RegisterView(APIView):
                 value={
                     "username": "john_darksouls",
                     "email": "johndarksouls@example.com",
-                    "password": "SecurePassword123!",
-                    "password1": "SecurePassword123!"
+                    "password1": "SecurePassword123!",
+                    "password2": "SecurePassword123!"
                 },
                 request_only=True
             )
@@ -361,6 +392,7 @@ class RegisterView(APIView):
     )
     def post(self, request):
         data = request.data.copy()
+
         if 'password1' in data:
             data['password'] = data['password1']
 
@@ -413,9 +445,11 @@ class LoginView(APIView):
 # --- USER VIEWSET ---
 @extend_schema_view(
     list=extend_schema(summary="List users", description="Returns a list of all users (Admin only)."),
-    retrieve=extend_schema(summary="Retrieve user details", description="Returns details of a specific user (Admin only)."),
+    retrieve=extend_schema(summary="Retrieve user details",
+                           description="Returns details of a specific user (Admin only)."),
     update=extend_schema(summary="Update user", description="Updates user profile information (Admin only)."),
-    partial_update=extend_schema(summary="Partially update user", description="Partially updates user profile (Admin only)."),
+    partial_update=extend_schema(summary="Partially update user",
+                                 description="Partially updates user profile (Admin only)."),
     destroy=extend_schema(summary="Delete user", description="Deletes a user account (Admin only)."),
     create=extend_schema(summary="Create user", description="Creates a new user (Admin only)."),
 )

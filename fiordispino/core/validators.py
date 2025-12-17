@@ -103,9 +103,9 @@ def validate_random_games_limit(value: str) -> None:
         # at most 20 not to overload the db
         validate("n_games", n_games, min_value=1, max_value=20)
     except (Valid8Err, ValueError, TypeError):
-        raise InvalidNumberOfGamesException()
+        raise InvalidNumberOfGamesException("Please keep n_games between 1 and 20")
 
 @typechecked
 def validate_box_art(value: File) -> None:
     if not value.name.lower().endswith('.jpg'):
-        raise InvalidImageFormatException
+        raise InvalidImageFormatException("Invalid image format, please use .jpg")

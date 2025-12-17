@@ -5,7 +5,7 @@ from rest_framework import status
 from django.contrib.auth import get_user_model
 from fiordispino.models import GamesToPlay, GamePlayed
 from fiordispino.tests.utils_testing import *
-from fiordispino.core.exceptions import GameAlreadyInGamesToPlay
+from fiordispino.core.exceptions import GameAlreadyInGamesToPlay, GameAlreadyInGamesPlayed
 
 
 @pytest.mark.django_db
@@ -56,6 +56,32 @@ class TestGamePlayedView:
 
         assert response.status_code in [status.HTTP_403_FORBIDDEN, status.HTTP_404_NOT_FOUND]
 
+    def test_move_to_backlog_fails_if_destination_exists(self, user, games):
+        """
+        Verify validation: cannot move to 'GamesToPlay' if the game is ALREADY in 'GamesToPlay'.
+        This prevents IntegrityErrors if state is inconsistent.
+        """
+        game = games[0]
+
+        # Setup: Game exists in BOTH lists (conflict state)
+        played_entry = GamePlayed.objects.create(owner=user, game=game, rating=10)
+        GamesToPlay.objects.create(owner=user, game=game)
+
+        client = get_client(user)
+        url = reverse('games-played-move-to-backlog', kwargs={'pk': played_entry.pk})
+
+        # Action: Try to move
+        response = client.post(url)
+
+        # Expectation: 400 Bad Request
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+        data = parse(response)
+        assert GameAlreadyInGamesToPlay.default_detail in str(data)
+
+        # Ensure the original entry wasn't deleted
+        assert GamePlayed.objects.filter(pk=played_entry.pk).exists()
+
     def test_create_duplicate_in_other_table_fails(self, user, games):
         """
         Verify validation: cannot add to 'GamePlayed' (via standard Create)
@@ -75,6 +101,25 @@ class TestGamePlayedView:
         data = parse(response)
         assert GameAlreadyInGamesToPlay.default_detail in str(data)
 
+    def test_create_duplicate_in_same_table_fails(self, user, games):
+        """
+        Verify validation: cannot add to 'GamePlayed' if it is ALREADY in 'GamePlayed'.
+        """
+        game = games[0]
+
+        # 1. Create entry manually
+        GamePlayed.objects.create(owner=user, game=game, rating=8)
+
+        client = get_client(user)
+        url = reverse('games-played-list')
+
+        # 2. Try to add same game again
+        payload = {'game': game.pk, 'rating': 10}
+        response = client.post(url, payload)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+
     def test_get_by_owner_success(self, user, games):
         GamePlayed.objects.create(owner=user, game=games[0], rating=10)
         client = get_client(user)
@@ -83,7 +128,6 @@ class TestGamePlayedView:
         assert response.status_code == status.HTTP_200_OK
         data = parse(response)
         assert len(data) == 1
-
 
     def test_get_by_owner_returns_empty_list_if_no_games(self, user):
         client = get_client(user)
@@ -104,5 +148,3 @@ class TestGamePlayedView:
         response = client.get(url)
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
-
-        assert "Invalid username" in str(response.data)
