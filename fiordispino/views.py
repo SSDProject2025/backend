@@ -23,8 +23,11 @@ from fiordispino.serializers.user_serializer import UserSerializer
 from fiordispino.core.validators import validate_username, validate_random_games_limit
 from fiordispino.permissions import IsAdminUnlessMe
 
-
-from fiordispino.core.docs_utils import GameDocsSerializer, GamesPlayedDocsSerializer
+from fiordispino.core.docs_utils import (
+    GameDocsSerializer,
+    GamesToPlayResponseSerializer,
+    GamesPlayedResponseSerializer
+)
 
 User = get_user_model()
 
@@ -63,12 +66,12 @@ class GenreViewSet(viewsets.ModelViewSet):
     list=extend_schema(
         summary="List all games",
         description="Returns a paginated list of all games.",
-        responses={200: GameDocsSerializer(many=True)}  # Uses Shadow Serializer from docs_utils
+        responses={200: GameDocsSerializer(many=True)} # Force Shadow Serializer for PEGI/Rating limits
     ),
     create=extend_schema(
         summary="Create a game",
         description="Adds a new game to the database (Admin only). Note that the box_art MUST be jpg",
-        request=GameDocsSerializer, # Uses Shadow Serializer for validation docs
+        request=GameDocsSerializer, # Use Shadow Serializer for input validation docs
         examples=[
             OpenApiExample(
                 'Game Create Payload',
@@ -89,7 +92,7 @@ class GenreViewSet(viewsets.ModelViewSet):
     retrieve=extend_schema(
         summary="Retrieve game details",
         description="Returns full details of a specific game.",
-        responses={200: GameDocsSerializer}, # Uses Shadow Serializer
+        responses={200: GameDocsSerializer}, # Force Shadow Serializer
         examples=[
             OpenApiExample(
                 'Game Detail Example',
@@ -143,7 +146,7 @@ class GameViewSet(viewsets.ModelViewSet):
                 required=False
             )
         ],
-        responses={200: GameDocsSerializer(many=True)} # Uses Shadow Serializer
+        responses={200: GameDocsSerializer(many=True)}
     )
     @action(detail=False, methods=['get'], url_path='random-games')
     def get_random_games(self, request):
@@ -158,7 +161,12 @@ class GameViewSet(viewsets.ModelViewSet):
 
 # --- GAMES TO PLAY VIEWSET ---
 @extend_schema_view(
-    list=extend_schema(summary="List 'Games to Play'", description="Returns the backlog list."),
+    list=extend_schema(
+        summary="List 'Games to Play'",
+        description="Returns the backlog list.",
+        # USES SHADOW SERIALIZER to show nested 'game' object
+        responses={200: GamesToPlayResponseSerializer(many=True)}
+    ),
     create=extend_schema(
         summary="Add to 'Games to Play'",
         description="Adds a game to the backlog.",
@@ -171,7 +179,11 @@ class GameViewSet(viewsets.ModelViewSet):
             )
         ]
     ),
-    retrieve=extend_schema(summary="Retrieve entry details"),
+    retrieve=extend_schema(
+        summary="Retrieve entry details",
+        # USES SHADOW SERIALIZER to show nested 'game' object
+        responses={200: GamesToPlayResponseSerializer}
+    ),
     update=extend_schema(summary="Update entry"),
     partial_update=extend_schema(summary="Partially update entry"),
     destroy=extend_schema(summary="Remove from 'Games to Play'"),
@@ -191,7 +203,8 @@ class GamesToPlayViewSet(viewsets.ModelViewSet):
     @extend_schema(
         summary="Get games to play by owner",
         description="Returns the 'Games to Play' list for a specific user.",
-        responses={200: GamesToPlaySerializer(many=True)}
+        # USES SHADOW SERIALIZER to show nested 'game' object
+        responses={200: GamesToPlayResponseSerializer(many=True)}
     )
     @action(detail=False, methods=['get'], url_path=r'owner/(?P<username>[^/.]+)')
     def get_by_owner(self, request, username=None):
@@ -206,7 +219,6 @@ class GamesToPlayViewSet(viewsets.ModelViewSet):
         request=inline_serializer(
             name='MoveToPlayedRequest',
             fields={
-                # Forced constraints for 1-10 rating
                 'rating': serializers.IntegerField(help_text="Rating (1-10)", min_value=1, max_value=10)
             }
         ),
@@ -243,7 +255,8 @@ class GamesToPlayViewSet(viewsets.ModelViewSet):
     list=extend_schema(
         summary="List 'Games Played'",
         description="Returns finished games.",
-        responses={200: GamesPlayedDocsSerializer(many=True)} # Uses Shadow Serializer
+        # USES SHADOW SERIALIZER to show nested 'game' object + fixed rating
+        responses={200: GamesPlayedResponseSerializer(many=True)}
     ),
     create=extend_schema(
         summary="Add to 'Games Played'",
@@ -252,7 +265,6 @@ class GamesToPlayViewSet(viewsets.ModelViewSet):
             name='GamePlayedCreate',
             fields={
                 'game': serializers.IntegerField(min_value=1),
-                # Forced constraints for 1-10 rating
                 'rating': serializers.IntegerField(min_value=1, max_value=10)
             }
         ),
@@ -271,10 +283,11 @@ class GamesToPlayViewSet(viewsets.ModelViewSet):
     ),
     retrieve=extend_schema(
         summary="Retrieve entry details",
-        responses={200: GamesPlayedDocsSerializer} # Uses Shadow Serializer
+        # USES SHADOW SERIALIZER to show nested 'game' object + fixed rating
+        responses={200: GamesPlayedResponseSerializer}
     ),
-    update=extend_schema(summary="Update entry", request=GamesPlayedDocsSerializer),
-    partial_update=extend_schema(summary="Partially update entry", request=GamesPlayedDocsSerializer),
+    update=extend_schema(summary="Update entry"),
+    partial_update=extend_schema(summary="Partially update entry"),
     destroy=extend_schema(summary="Remove from 'Games Played'"),
 )
 class GamePlayedViewSet(viewsets.ModelViewSet):
@@ -292,7 +305,8 @@ class GamePlayedViewSet(viewsets.ModelViewSet):
     @extend_schema(
         summary="Get played games by owner",
         description="Returns the 'Games Played' list for a specific user.",
-        responses={200: GamesPlayedDocsSerializer(many=True)} # Uses Shadow Serializer
+        # USES SHADOW SERIALIZER to show nested 'game' object + fixed rating
+        responses={200: GamesPlayedResponseSerializer(many=True)}
     )
     @action(detail=False, methods=['get'], url_path=r'owner/(?P<username>[^/.]+)')
     def get_by_owner(self, request, username=None):

@@ -1,8 +1,9 @@
 from rest_framework import serializers
 from fiordispino.serializers.game_serializer import GameSerializer
 from fiordispino.serializers.games_played_serializer import GamesPlayedSerializer
+from fiordispino.serializers.games_to_play_serializer import GamesToPlaySerializer
 
-# shadow serializers to generate valid documentation with realisitc data
+# shadow serializers to generate realistic docs values
 
 class GameDocsSerializer(GameSerializer):
     pegi = serializers.ChoiceField(choices=[3, 7, 12, 16, 18])
@@ -13,9 +14,19 @@ class GameDocsSerializer(GameSerializer):
     class Meta(GameSerializer.Meta):
         ref_name = 'GameResponseFixed'
 
-class GamesPlayedDocsSerializer(GamesPlayedSerializer):
+
+class GamesToPlayResponseSerializer(GamesToPlaySerializer):
+    game = GameDocsSerializer(read_only=True)
+    id = serializers.IntegerField(min_value=1, max_value=99999, read_only=True)
+
+    class Meta(GamesToPlaySerializer.Meta):
+        ref_name = 'GamesToPlayResponseFixed'
+
+
+class GamesPlayedResponseSerializer(GamesPlayedSerializer):
+    game = GameDocsSerializer(read_only=True)
     rating = serializers.IntegerField(min_value=1, max_value=10)
     id = serializers.IntegerField(min_value=1, max_value=99999, read_only=True)
 
     class Meta(GamesPlayedSerializer.Meta):
-        ref_name = 'GamePlayedResponseFixed'
+        ref_name = 'GamesPlayedResponseFixed'
