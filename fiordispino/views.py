@@ -76,7 +76,7 @@ class GenreViewSet(viewsets.ModelViewSet):
             OpenApiExample(
                 'Game Create Payload',
                 summary='Creation Example',
-                description='Valid payload to create a game.',
+                description='Valid payload to create a game. Note that the box_art MUST be jpg',
                 value={
                     "title": "Hollow Knight",
                     "description": "An epic adventure through a ruined kingdom of insects and heroes.",
@@ -97,7 +97,7 @@ class GenreViewSet(viewsets.ModelViewSet):
             OpenApiExample(
                 'Game Detail Example',
                 summary='Realistic Game Detail',
-                description='Example of GET response with valid data (PEGI enum, Rating 0-10).',
+                description='Example of GET response with valid data (PEGI enum, Rating 0-10, box-art JPG).',
                 value={
                     "id": 101,
                     "title": "The Witcher 3: Wild Hunt",
@@ -142,7 +142,10 @@ class GameViewSet(viewsets.ModelViewSet):
                 name='n_games',
                 type=OpenApiTypes.INT,
                 location=OpenApiParameter.QUERY,
-                description='Number of random games (Default: 5; Min: 1; Max: 20).',
+                description='Number of random games.',
+                min=1,
+                max=20,
+                default=5,
                 required=False
             )
         ],
