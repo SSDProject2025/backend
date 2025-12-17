@@ -6,9 +6,9 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.authtoken.models import Token
 from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework import serializers
 
 from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter, OpenApiTypes, inline_serializer, OpenApiExample
-from rest_framework import serializers
 
 from fiordispino.models import *
 from fiordispino.serializers.genre_serializers import GenreSerializer
@@ -20,19 +20,11 @@ from fiordispino.core.exceptions import GameAlreadyInGamesToPlay, GameAlreadyInG
 from fiordispino.serializers.login_serializers import LoginSerializer
 from fiordispino.serializers.register_serializers import RegisterSerializer
 from fiordispino.serializers.user_serializer import UserSerializer
-
-from rest_framework.response import Response
-from rest_framework import status
-from rest_framework.authtoken.models import Token
-from rest_framework.permissions import AllowAny
-
-from rest_framework.permissions import IsAuthenticated
-
-from fiordispino.serializers.register_serializers import RegisterSerializer
-from fiordispino.serializers.register_serializers import RegisterSerializer
-from fiordispino.serializers.user_serializer import UserSerializer
 from fiordispino.core.validators import validate_username, validate_random_games_limit
 from fiordispino.permissions import IsAdminUnlessMe
+
+
+from fiordispino.core.docs_utils import GameDocsSerializer, GamesPlayedDocsSerializer
 
 User = get_user_model()
 
@@ -68,10 +60,15 @@ class GenreViewSet(viewsets.ModelViewSet):
 
 # --- GAME VIEWSET ---
 @extend_schema_view(
-    list=extend_schema(summary="List all games", description="Returns a paginated list of all games."),
+    list=extend_schema(
+        summary="List all games",
+        description="Returns a paginated list of all games.",
+        responses={200: GameDocsSerializer(many=True)}  # Uses Shadow Serializer from docs_utils
+    ),
     create=extend_schema(
         summary="Create a game",
         description="Adds a new game to the database (Admin only). Note that the box_art MUST be jpg",
+        request=GameDocsSerializer, # Uses Shadow Serializer for validation docs
         examples=[
             OpenApiExample(
                 'Game Create Payload',
@@ -92,6 +89,7 @@ class GenreViewSet(viewsets.ModelViewSet):
     retrieve=extend_schema(
         summary="Retrieve game details",
         description="Returns full details of a specific game.",
+        responses={200: GameDocsSerializer}, # Uses Shadow Serializer
         examples=[
             OpenApiExample(
                 'Game Detail Example',
@@ -116,8 +114,16 @@ class GenreViewSet(viewsets.ModelViewSet):
             )
         ]
     ),
-    update=extend_schema(summary="Update a game", description="Updates a game completely. (Admin only)"),
-    partial_update=extend_schema(summary="Partially update a game", description="Updates specific fields. (Admin only)"),
+    update=extend_schema(
+        summary="Update a game",
+        description="Updates a game completely. (Admin only)",
+        request=GameDocsSerializer
+    ),
+    partial_update=extend_schema(
+        summary="Partially update a game",
+        description="Updates specific fields. (Admin only)",
+        request=GameDocsSerializer
+    ),
     destroy=extend_schema(summary="Delete a game", description="Removes a game. (Admin only)"),
 )
 class GameViewSet(viewsets.ModelViewSet):
@@ -137,7 +143,7 @@ class GameViewSet(viewsets.ModelViewSet):
                 required=False
             )
         ],
-        responses={200: GameSerializer(many=True)}
+        responses={200: GameDocsSerializer(many=True)} # Uses Shadow Serializer
     )
     @action(detail=False, methods=['get'], url_path='random-games')
     def get_random_games(self, request):
@@ -199,7 +205,10 @@ class GamesToPlayViewSet(viewsets.ModelViewSet):
         description="Moves a game to 'Games Played'. Requires a rating.",
         request=inline_serializer(
             name='MoveToPlayedRequest',
-            fields={'rating': serializers.IntegerField(help_text="Rating (1-10)", min_value=1, max_value=10)}
+            fields={
+                # Forced constraints for 1-10 rating
+                'rating': serializers.IntegerField(help_text="Rating (1-10)", min_value=1, max_value=10)
+            }
         ),
         examples=[
             OpenApiExample(
@@ -231,14 +240,19 @@ class GamesToPlayViewSet(viewsets.ModelViewSet):
 
 # --- GAMES PLAYED VIEWSET ---
 @extend_schema_view(
-    list=extend_schema(summary="List 'Games Played'", description="Returns finished games."),
+    list=extend_schema(
+        summary="List 'Games Played'",
+        description="Returns finished games.",
+        responses={200: GamesPlayedDocsSerializer(many=True)} # Uses Shadow Serializer
+    ),
     create=extend_schema(
         summary="Add to 'Games Played'",
         description="Adds a finished game with a rating.",
         request=inline_serializer(
             name='GamePlayedCreate',
             fields={
-                'game': serializers.IntegerField(),
+                'game': serializers.IntegerField(min_value=1),
+                # Forced constraints for 1-10 rating
                 'rating': serializers.IntegerField(min_value=1, max_value=10)
             }
         ),
@@ -255,9 +269,12 @@ class GamesToPlayViewSet(viewsets.ModelViewSet):
             )
         ]
     ),
-    retrieve=extend_schema(summary="Retrieve entry details"),
-    update=extend_schema(summary="Update entry"),
-    partial_update=extend_schema(summary="Partially update entry"),
+    retrieve=extend_schema(
+        summary="Retrieve entry details",
+        responses={200: GamesPlayedDocsSerializer} # Uses Shadow Serializer
+    ),
+    update=extend_schema(summary="Update entry", request=GamesPlayedDocsSerializer),
+    partial_update=extend_schema(summary="Partially update entry", request=GamesPlayedDocsSerializer),
     destroy=extend_schema(summary="Remove from 'Games Played'"),
 )
 class GamePlayedViewSet(viewsets.ModelViewSet):
@@ -275,7 +292,7 @@ class GamePlayedViewSet(viewsets.ModelViewSet):
     @extend_schema(
         summary="Get played games by owner",
         description="Returns the 'Games Played' list for a specific user.",
-        responses={200: GamesPlayedSerializer(many=True)}
+        responses={200: GamesPlayedDocsSerializer(many=True)} # Uses Shadow Serializer
     )
     @action(detail=False, methods=['get'], url_path=r'owner/(?P<username>[^/.]+)')
     def get_by_owner(self, request, username=None):
