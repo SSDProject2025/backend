@@ -142,10 +142,7 @@ class GameViewSet(viewsets.ModelViewSet):
                 name='n_games',
                 type=OpenApiTypes.INT,
                 location=OpenApiParameter.QUERY,
-                description='Number of random games.',
-                min=1,
-                max=20,
-                default=5,
+                description='Number of random games (min=5; max=20; default=5).',
                 required=False
             )
         ],
