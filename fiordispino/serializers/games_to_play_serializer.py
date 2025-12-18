@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from fiordispino.models import GamesToPlay
+from fiordispino.models import GamesToPlay, GamePlayed
 from fiordispino.serializers import game_serializer
 
 
@@ -23,3 +23,12 @@ class GamesToPlaySerializer(serializers.ModelSerializer):
         # representation['game_title'] = instance.game.title
 
         return representation
+
+
+class MoveToPlayedSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = GamePlayed
+        fields = ['rating']
+        extra_kwargs = {
+            'rating': {'required': True}
+        }

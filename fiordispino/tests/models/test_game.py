@@ -1,5 +1,7 @@
 import os
 from datetime import date
+from time import sleep
+
 import pytest
 from django.core.exceptions import ValidationError
 from fiordispino.core.exceptions import InvalidImageFormatException
@@ -51,7 +53,7 @@ class TestGameModel:
     def test_game_update_updates_timestamp(self):
         game = mixer.blend(Game, title="Red Dead Redemption II")
         original_updated_at = game.updated_at
-
+        sleep(0.1)
         game.title = "New Title"
         game.save()
 

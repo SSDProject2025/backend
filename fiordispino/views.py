@@ -24,7 +24,7 @@ from fiordispino.models import Genre, Game, GamesToPlay, GamePlayed
 from fiordispino.serializers.genre_serializers import GenreSerializer
 from fiordispino.serializers.game_serializer import GameSerializer
 from fiordispino import permissions as custom_permissions
-from fiordispino.serializers.games_to_play_serializer import GamesToPlaySerializer
+from fiordispino.serializers.games_to_play_serializer import GamesToPlaySerializer, MoveToPlayedSerializer
 from fiordispino.serializers.games_played_serializer import GamesPlayedSerializer
 from fiordispino.core.exceptions import GameAlreadyInGamesToPlay, GameAlreadyInGamesPlayed
 from fiordispino.serializers.login_serializers import LoginSerializer
@@ -252,9 +252,9 @@ class GamesToPlayViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'], url_path='move-in-played')
     def move_to_played(self, request, pk=None):
         game_to_play_instance = self.get_object()
-        rating = request.data.get('rating')
-        if rating is None:
-            return Response({"detail": "Please provide a rating."}, status=status.HTTP_400_BAD_REQUEST)
+        serializer = MoveToPlayedSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        rating = serializer.validated_data['rating']
 
         # Check if already played
         if GamePlayed.objects.filter(owner=game_to_play_instance.owner, game=game_to_play_instance.game).exists():
@@ -269,6 +269,45 @@ class GamesToPlayViewSet(viewsets.ModelViewSet):
             game_to_play_instance.delete()
 
         return Response(status=status.HTTP_200_OK)
+
+    @extend_schema(
+        summary="Check to play status",
+        description="Returns the GamesToPlay ID if it exists, otherwise null.",
+        parameters=[
+            OpenApiParameter(
+                name='game_id',
+                description='The ID of the game to check',
+                required=True,
+                 type=OpenApiTypes.INT
+            ),
+        ],
+        responses={
+            200: inline_serializer(
+                name='CheckBacklogStatusResponse',
+                fields={
+                    'id': serializers.IntegerField(allow_null=True, help_text="The ID of the GamesToPlay instance")
+                }
+            )
+        }
+    )
+    @action(detail=False, methods=['get'], url_path='check-status')
+    def check_status(self, request):
+        game_id = request.query_params.get('game_id')
+
+        if not game_id:
+            return Response(
+                {"detail": "Please provide a game_id parameter"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        instance = GamesToPlay.objects.filter(
+            owner=request.user,
+            game_id=game_id
+        ).first()
+
+        return Response({
+            "id": instance.id if instance else None
+        })
 
 
 # --- GAMES PLAYED VIEWSET ---
@@ -361,6 +400,46 @@ class GamePlayedViewSet(viewsets.ModelViewSet):
             played_instance.delete()
 
         return Response(status=status.HTTP_200_OK)
+
+    @extend_schema(
+        summary="Check game played status",
+        description="Returns the GamePlayed ID if it exists, otherwise null.",
+        parameters=[
+            OpenApiParameter(
+                name='game_id',
+                description='The ID of the game to check',
+                required=True,
+                type=OpenApiTypes.INT
+            ),
+        ],
+        responses={
+            200: inline_serializer(
+                name='CheckStatusResponse',
+                fields={
+                    'id': serializers.IntegerField(allow_null=True,
+                                                   help_text="The ID of the GamePlayed instance (null if not played)")
+                }
+            )
+        }
+    )
+    @action(detail=False, methods=['get'], url_path='check-status')
+    def check_status(self, request):
+        game_id = request.query_params.get('game_id')
+
+        if not game_id:
+            return Response(
+                {"detail": "Please provide a game_id parameter"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        played_instance = GamePlayed.objects.filter(
+            owner=request.user,
+            game_id=game_id
+        ).first()
+
+        return Response({
+            "id": played_instance.id if played_instance else None
+        })
 
 
 # --- AUTH VIEWS ---
