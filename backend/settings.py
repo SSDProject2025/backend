@@ -73,8 +73,7 @@ MIDDLEWARE = [
 # why not cors_origin_whitelist like in the slides? -> It's deprecated!
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:8000', # django server
-    'http://localhost:5173', # django server
-    # add frontend server here
+    'http://localhost:5173', # frontend server
 ]
 
 ROOT_URLCONF = 'backend.urls'

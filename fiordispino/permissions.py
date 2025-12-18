@@ -12,31 +12,26 @@ class IsAdminOrReadOnly(permissions.BasePermission):
         return bool(request.user and request.user.is_staff)
 
 
-class IsOwnerOrReadOnly(permissions.BasePermission):
+class IsOwnerOrAdminOrReadOnly(permissions.BasePermission):
     """
-    Custom permission to only allow owners of an object to edit or delete it.
-
-    Rules:
-    - READ (GET): Everyone can see the entries.
-    - CREATE (POST): Any authenticated user can create.
-    - UPDATE/DELETE: Only the owner.
+    Object-level permission to allow only owners of an object or admins to edit/delete it.
+    Assumes the model instance has an `owner` attribute.
     """
 
     def has_permission(self, request, view):
-        # Allow read-only methods for everyone (GET, HEAD, OPTIONS)
-        if request.method in permissions.SAFE_METHODS:
-            return True
-
-        # For write operations (POST, PUT, DELETE), the user must be logged in.
-        return bool(request.user and request.user.is_authenticated)
-
-    def has_object_permission(self, request, view, obj):
         # Allow read-only methods for everyone
         if request.method in permissions.SAFE_METHODS:
             return True
+        # For any write operation, the user must be authenticated
+        return bool(request.user and request.user.is_authenticated)
 
-        # For UPDATE and DELETE, check if the user is the owner
-        return obj.owner == request.user
+    def has_object_permission(self, request, view, obj):
+        # Read permissions are allowed to any request
+        if request.method in permissions.SAFE_METHODS:
+            return True
+
+        # Write permissions are only allowed to the owner of the object OR staff users
+        return obj.owner == request.user or bool(request.user and request.user.is_staff)
 
 
 class IsAdminUnlessMe(permissions.BasePermission):
@@ -56,12 +51,13 @@ class IsAdminUnlessMe(permissions.BasePermission):
 # Hence, we use pragma: no cover to tell coverage to ignore them
 
 def forbid_add_permission(model_admin, request):  # pragma: no cover
-    # to prevent the admin from creating libraries
+    # prevents the admin from manually creating entries for users
     return False
 
 def forbid_change_permission(model_admin, request, obj=None):  # pragma: no cover
-    # to prevent the admin from editing libraries
+    # prevents the admin from editing existing entries
     return False
 
-def forbid_delete_permission(model_admin, request, obj=None):  # pragma: no cover
-    return False
+def allow_delete_permission(model_admin, request, obj=None):  # pragma: no cover
+    # allows the admin to delete entries via the Django Admin panel -> otherwise the admin can't delete games!
+    return True

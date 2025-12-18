@@ -6,6 +6,8 @@ from django.core.exceptions import ValidationError
 from fiordispino.models import GamePlayed
 from fiordispino.tests.utils_testing import *
 
+User = get_user_model()
+
 
 @pytest.mark.django_db
 class TestGamePlayed:
@@ -36,10 +38,10 @@ class TestGamePlayed:
     def test_rating_validation(self, user, games):
         """
         Test that the rating validator is working.
-        Note that it enforces a discrete range from 1 to 10
+        Note that it enforces a discrete range from 1 to 10.
         """
         game = games[0]
-
+        # Testing a value outside the allowed range (1-10)
         entry = GamePlayed(owner=user, game=game, rating=11)
 
         with pytest.raises(ValidationError):
@@ -47,10 +49,10 @@ class TestGamePlayed:
 
     def test_different_users_can_add_same_game(self, games):
         """
-        Test that two different users can mark the same game as played.
+        Test that two different users can mark the same game as played independently.
         """
-        user1 = mixer.blend(get_user_model())
-        user2 = mixer.blend(get_user_model())
+        user1 = mixer.blend(User)
+        user2 = mixer.blend(User)
         game = games[0]
 
         entry1 = GamePlayed.objects.create(owner=user1, game=game, rating=8)
@@ -71,16 +73,19 @@ class TestGamePlayed:
         assert original_created_at is not None
         assert original_updated_at is not None
 
+        # Short pause to ensure a timestamp difference
         time.sleep(0.01)
         entry.rating = 6
         entry.save()
         entry.refresh_from_db()
+
         assert entry.created_at == original_created_at
         assert entry.updated_at > original_updated_at
 
     def test_cascade_delete_game(self, user, games):
         """
-        Test that if a Game is deleted, the GamePlayed entry is also deleted (Cascade).
+        Test that if a Game is deleted from the database,
+        the related GamePlayed entry is automatically removed (Cascade).
         """
         game = games[0]
         GamePlayed.objects.create(owner=user, game=game, rating=9)
@@ -91,10 +96,27 @@ class TestGamePlayed:
 
     def test_cascade_delete_user(self, user, games):
         """
-        Test that if a User is deleted, their GamePlayed entries are also deleted (Cascade).
+        Test that if a User is deleted, their personal library
+        entries are also removed (Cascade).
         """
         GamePlayed.objects.create(owner=user, game=games[0], rating=9)
 
         assert GamePlayed.objects.count() == 1
         user.delete()
+        assert GamePlayed.objects.count() == 0
+
+    def test_admin_can_delete_user_entry(self, user, games):
+        """
+        Logic Test: Verify that an entry can be deleted regardless of
+        the owner if requested by an authorized process (Admin logic).
+        """
+        admin_user = mixer.blend(User, is_staff=True)
+        game = games[0]
+        entry = GamePlayed.objects.create(owner=user, game=game, rating=10)
+
+        assert GamePlayed.objects.count() == 1
+
+        # Simulating admin deletion
+        entry.delete()
+
         assert GamePlayed.objects.count() == 0

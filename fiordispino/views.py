@@ -199,7 +199,7 @@ class GameViewSet(viewsets.ModelViewSet):
     destroy=extend_schema(summary="Remove from 'Games to Play'"),
 )
 class GamesToPlayViewSet(viewsets.ModelViewSet):
-    permission_classes = [IsAuthenticated, custom_permissions.IsOwnerOrReadOnly]
+    permission_classes = [IsAuthenticated, custom_permissions.IsOwnerOrAdminOrReadOnly]
     queryset = GamesToPlay.objects.all()
     serializer_class = GamesToPlaySerializer
 
@@ -310,7 +310,7 @@ class GamesToPlayViewSet(viewsets.ModelViewSet):
     destroy=extend_schema(summary="Remove from 'Games Played'"),
 )
 class GamePlayedViewSet(viewsets.ModelViewSet):
-    permission_classes = [IsAuthenticated, custom_permissions.IsOwnerOrReadOnly]
+    permission_classes = [IsAuthenticated, custom_permissions.IsOwnerOrAdminOrReadOnly]
     queryset = GamePlayed.objects.all()
     serializer_class = GamesPlayedSerializer
 
