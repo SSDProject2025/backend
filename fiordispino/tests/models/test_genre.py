@@ -1,3 +1,5 @@
+from time import sleep
+
 import pytest
 from django.core.exceptions import ValidationError
 from mixer.backend.django import mixer
@@ -18,7 +20,7 @@ class TestGenreModel:
     def test_genre_update_updates_timestamp(self):
         genre = mixer.blend(Genre)
         original_updated_at = genre.updated_at
-
+        sleep(0.1)
         genre.name = "Survival Horror"
         genre.save()
 

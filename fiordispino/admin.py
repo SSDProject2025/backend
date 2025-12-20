@@ -1,7 +1,9 @@
 from django.contrib import admin
-
-from fiordispino.models import *
-from fiordispino.permissions import *
+from fiordispino.models import Genre, User, Game, GamesToPlay, GamePlayed
+from fiordispino.permissions import (
+    forbid_add_permission,
+    forbid_change_permission
+)
 
 admin.site.register(Genre)
 admin.site.register(User)
@@ -9,30 +11,37 @@ admin.site.register(User)
 
 @admin.register(Game)
 class GameAdmin(admin.ModelAdmin):
-    # these fields can only change when a user make some action on GamesPlayed
+    # These fields are updated automatically based on user ratings in GamesPlayed
     readonly_fields = ('global_rating', 'rating_count')
 
-# The admin should just visualize libraries, not create/edit/delete
+
 @admin.register(GamesToPlay)
 class GamesToPlayAdmin(admin.ModelAdmin):
+    """
+    Admin configuration for the 'Backlog' list.
+    Admins can view and delete entries, but cannot manually add or edit them.
+    """
     has_add_permission = forbid_add_permission
     has_change_permission = forbid_change_permission
 
-    # why block also delete permission? Because it make no sense to delete a library! The app become unusable for the user
-    # if a user does strange stuff just ban them
-    has_delete_permission = forbid_delete_permission
+    # Admins are now allowed to delete entries to manage the database content
+    def has_delete_permission(self, request, obj=None):
+        return True
 
-    list_display = ('__str__',)
+    list_display = ('__str__', 'owner', 'game')
 
 
 @admin.register(GamePlayed)
 class GamePlayedAdmin(admin.ModelAdmin):
+    """
+    Admin configuration for the 'Played' list.
+    Admins can view and delete entries, but cannot manually add or edit them.
+    """
     has_add_permission = forbid_add_permission
     has_change_permission = forbid_change_permission
 
-    # why block also delete permission? Because it make no sense to delete a library! The app become unusable for the user
-    # if a user does strange stuff just ban them
-    has_delete_permission = forbid_delete_permission
+    # Admins are now allowed to delete entries (e.g., to remove fake/troll reviews)
+    def has_delete_permission(self, request, obj=None):
+        return True
 
-    list_display = ('__str__',)
-
+    list_display = ('__str__', 'owner', 'game', 'rating')

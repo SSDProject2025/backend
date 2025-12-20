@@ -10,6 +10,12 @@ from rest_framework.test import APIClient
 
 
 @pytest.fixture
+def available_games():
+    # create 25 games to test the get-random-games endpoint
+    return mixer.cycle(25).blend('fiordispino.Game', title='GTA VI')
+
+
+@pytest.fixture
 def games(db):
     return [
         # fields like title and global_rating are fixed because mixer tends to create values that fails to respect validation rules
@@ -33,6 +39,14 @@ def games_to_play(db, games):
         mixer.blend('fiordispino.GamesToPlay', game=games[0]),
         mixer.blend('fiordispino.GamesToPlay', game=games[1]),
         mixer.blend('fiordispino.GamesToPlay', game=games[2]),
+    ]
+
+@pytest.fixture
+def games_played(db, games):
+    return [
+        mixer.blend('fiordispino.GamePlayed', game=games[0]),
+        mixer.blend('fiordispino.GamePlayed', game=games[0]),
+        mixer.blend('fiordispino.GamePlayed', game=games[0]),
     ]
 
 @pytest.fixture
@@ -71,6 +85,13 @@ def game_data(db, genre):
 def games_to_play_data(db, games):
     return {
         'game': games[0].pk
+    }
+
+@pytest.fixture
+def game_played_data(db, games):
+    return {
+        'game': games[0].pk,
+        'rating': 5.5,
     }
 
 @pytest.fixture

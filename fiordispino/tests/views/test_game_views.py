@@ -2,13 +2,16 @@ import pytest
 from io import BytesIO
 from PIL import Image
 from rest_framework import status
-from rest_framework.test import APIRequestFactory, force_authenticate  # Importante: importa force_authenticate
+from rest_framework.reverse import reverse
+from rest_framework.test import APIRequestFactory, force_authenticate
 from django.core.files.uploadedfile import SimpleUploadedFile
 from mixer.backend.django import mixer
 from django.contrib.auth import get_user_model
 
+from fiordispino.core.exceptions import InvalidNumberOfGamesException
 from fiordispino.views import GameViewSet
 from fiordispino.models import Game, Genre
+from fiordispino.tests.utils_testing import *
 
 
 @pytest.mark.django_db
@@ -105,3 +108,51 @@ class TestGameView:
         response = view(request)
 
         assert response.status_code == status.HTTP_403_FORBIDDEN
+
+    def test_get_random_games_default_value(self, admin_user, available_games):
+
+        # Verify that if 'n_games' is not provided, it defaults to 5.
+        client = get_client(admin_user)
+        url = reverse('game-get-random-games')
+
+        response = client.get(url)
+
+        assert response.status_code == status.HTTP_200_OK
+        data = parse(response)
+        assert len(data) == 5
+
+    def test_get_random_games_custom_value_success(self, admin_user, available_games):
+        client = get_client(admin_user)
+        url = reverse('game-get-random-games')
+
+        response = client.get(url, {'n_games': 3})
+
+        assert response.status_code == status.HTTP_200_OK
+        data = parse(response)
+        assert len(data) == 3
+
+    def test_get_random_games_max_limit_success(self, admin_user, available_games):
+        client = get_client(admin_user)
+        url = reverse('game-get-random-games')
+
+        response = client.get(url, {'n_games': 20})
+
+        assert response.status_code == status.HTTP_200_OK
+        data = parse(response)
+        assert len(data) == 20
+
+    @pytest.mark.parametrize("invalid_input", [
+        "0",  # Too low (min 1)
+        "-5",  # Negative
+        "21",  # Too high (max 20)
+        "abc",  # Not an integer
+        "1.5",  # Float instead of int
+        "",  # Empty string (if passed explicitly)
+    ])
+    def test_get_random_games_validation_errors(self, admin_user, available_games, invalid_input):
+        client = get_client(admin_user)
+        url = reverse('game-get-random-games')
+
+        response = client.get(url, {'n_games': invalid_input})
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST

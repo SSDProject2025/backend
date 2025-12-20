@@ -28,6 +28,17 @@ dependencies = [
     "requests (>=2.32.5,<3.0.0)"
 ]
 
+# to exclude non-testable files
+[tool.coverage.run]
+source = ["."]
+omit = [
+    "*/tests/*",           # do not consider the tests themselves
+    "*/migrations/*",
+    "manage.py",
+    "backend/asgi.py",
+    "backend/wsgi.py"
+]
+
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]

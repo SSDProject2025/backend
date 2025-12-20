@@ -56,8 +56,8 @@ class TestGamesToPlayView:
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
         data = parse(response)
-        assert 'detail' in data
-        assert GamesToPlay.objects.filter(pk=entry_to_play.pk).exists()
+        assert 'rating' in data
+        assert data['rating'][0] == 'This field is required.'
 
     def test_move_to_played_permission_denied(self, user, games):
         """
@@ -92,3 +92,129 @@ class TestGamesToPlayView:
 
         data = parse(response)
         assert GameAlreadyInGamesPlayed.default_detail in str(data)
+
+    
+    def test_get_by_owner_should_fail_with_invalid_username(self, user):
+
+        evil_username = "' OR '1'='1'" # classic sql injection code
+        url = reverse('games-to-play-get-by-owner', kwargs={'username': evil_username})
+        client = get_client(user)
+        response = client.get(url)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+    def test_get_by_owner_success(self, user, games):
+        GamesToPlay.objects.create(owner=user, game=games[0])
+
+        client = get_client(user)
+        url = reverse('games-to-play-get-by-owner', kwargs={'username': user.username})
+
+        response = client.get(url)
+
+        assert response.status_code == status.HTTP_200_OK
+
+        data = parse(response)
+
+        assert len(data) == 1
+
+    def test_get_by_owner_with_empty_list(self, user):
+        client = get_client(user)
+        url = reverse('games-to-play-get-by-owner', kwargs={'username': user.username})
+        response = client.get(url)
+        assert response.status_code == status.HTTP_200_OK
+        data = parse(response)
+        assert len(data) == 0
+
+    def test_create_duplicate_in_same_table_fails(self, user, games):
+        game = games[0]
+        # 1. Create the entry first manually
+        GamesToPlay.objects.create(owner=user, game=game)
+
+        client = get_client(user)
+        url = reverse('games-to-play-list')
+
+        # 2. Try to add the same game again via API
+        payload = {'game': game.id}
+        response = client.post(url, payload)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+    def test_move_to_played_fails_if_destination_exists(self, user, games):
+        game = games[0]
+
+        # Setup: The game is in "To Play" AND already in "Played"
+        entry_to_play = GamesToPlay.objects.create(owner=user, game=game)
+        GamePlayed.objects.create(owner=user, game=game, rating=10)
+
+        client = get_client(user)
+        url = reverse('games-to-play-move-to-played', kwargs={'pk': entry_to_play.pk})
+        payload = {'rating': 9}
+
+        # Action: Try to move it
+        response = client.post(url, payload)
+
+        # Expectation: 400 Bad Request (not 500 IntegrityError)
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+        # Ensure the original 'To Play' entry was NOT deleted because the move failed
+        assert GamesToPlay.objects.filter(pk=entry_to_play.pk).exists()
+
+    def test_check_status_should_return_correct_id_if_game_exists(self, user, games):
+        """
+        Verify check_status returns the correct ID if the game is in the to-play list.
+        """
+        game = games[0]
+        entry = GamesToPlay.objects.create(owner=user, game=game)
+        client = get_client(user)
+        url = reverse('games-to-play-check-status')
+        response = client.get(url, {'game_id': game.id})
+        assert response.status_code == status.HTTP_200_OK
+        data = parse(response)
+        assert data['id'] == entry.id
+
+    def test_check_status_should_return_none_if_game_not_exists(self, user, games):
+        """
+        Verify check_status returns id: None if the game is not in the to-play list.
+        """
+        game = games[0]
+        client = get_client(user)
+        url = reverse('games-to-play-check-status')
+        response = client.get(url, {'game_id': game.id})
+        assert response.status_code == status.HTTP_200_OK
+        data = parse(response)
+        assert data['id'] is None
+
+
+    def test_check_status_should_fail_if_is_given_missing_param(self, user):
+        """
+        Verify check_status returns 400 if game_id is missing.
+        """
+        client = get_client(user)
+        url = reverse('games-to-play-check-status')
+        response = client.get(url)
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+
+    def test_check_status_should_isolate_user_lists(self, user, games):
+        """
+        Verify a user cannot see games in another user's to-play list via check_status.
+        """
+        other_user = mixer.blend(get_user_model())
+        game = games[0]
+        GamesToPlay.objects.create(owner=other_user, game=game)
+        client = get_client(user)
+        url = reverse('games-to-play-check-status')
+        response = client.get(url, {'game_id': game.id})
+        assert response.status_code == status.HTTP_200_OK
+        data = parse(response)
+        assert data['id'] is None
+
+    def test_check_status_should_fail_on_unauthorized_user(self, games):
+        """
+        Verify anonymous users cannot use check_status.
+        """
+        from rest_framework.test import APIClient
+        client = APIClient()
+        url = reverse('games-to-play-check-status')
+        response = client.get(url, {'game_id': games[0].id})
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED

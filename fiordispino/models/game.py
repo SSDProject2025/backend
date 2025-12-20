@@ -20,7 +20,7 @@ def build_path(instance, filename):
     return os.path.join('games', 'covers', new_filename)
 
 class Game(models.Model):
-    box_art = models.ImageField(upload_to=build_path)
+    box_art = models.ImageField(upload_to=build_path, validators=[validate_box_art])
     description = models.TextField(validators=[validate_game_description])
     title = models.TextField(validators=[validate_title])
     global_rating = models.DecimalField(default=0.0, max_digits=3, decimal_places=1, validators=[validate_global_rating])

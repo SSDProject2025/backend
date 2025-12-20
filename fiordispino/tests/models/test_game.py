@@ -1,7 +1,10 @@
 import os
 from datetime import date
+from time import sleep
+
 import pytest
 from django.core.exceptions import ValidationError
+from fiordispino.core.exceptions import InvalidImageFormatException
 from mixer.backend.django import mixer
 
 from fiordispino.models import Game, Genre, GamePlayed
@@ -50,7 +53,7 @@ class TestGameModel:
     def test_game_update_updates_timestamp(self):
         game = mixer.blend(Game, title="Red Dead Redemption II")
         original_updated_at = game.updated_at
-
+        sleep(0.1)
         game.title = "New Title"
         game.save()
 
@@ -132,3 +135,23 @@ class TestGameModel:
         game.refresh_from_db()
 
         assert float(game.global_rating) == expected_global_rating
+
+    def test_game_validation_fails_with_non_jpg_box_art(self):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+
+        png_file = SimpleUploadedFile(
+            name='test_image.png',
+            content=b'fake image content',
+            content_type='image/png'
+        )
+
+        game = Game(
+            title="Cool game",
+            description="Testing invalid format",
+            pegi=3,
+            release_date=date(2020, 1, 1),
+            box_art=png_file
+        )
+
+        with pytest.raises(ValidationError):
+            game.full_clean()

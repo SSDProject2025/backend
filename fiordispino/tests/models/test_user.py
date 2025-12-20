@@ -1,80 +1,45 @@
 import pytest
 from django.contrib.auth import get_user_model
 from django.db import IntegrityError
-
-# Recuperiamo il modello User attivo
+from mixer.backend.django import mixer
+from fiordispino.tests.utils_testing import *
 User = get_user_model()
-
 
 @pytest.mark.django_db
 class TestUserModel:
 
-    def test_user_string_representation(self):
-        """
-        Verifica che il metodo __str__ restituisca l'email.
-        """
-        email = "test@example.com"
-        user = User.objects.create_user(email=email, password="password")
-        assert str(user) == email
+    def test_string_representation(self):
+        # __str__ must return the email
+        user = mixer.blend(User, email="test@example.com")
+        assert str(user) == "test@example.com"
 
-    def test_email_field_is_unique(self):
-        """
-        Verifica che non sia possibile creare due utenti con la stessa email.
-        Deve sollevare un IntegrityError (vincolo database).
-        """
+    def test_email_unique(self):
+        # Email must be unique
         email = "unique@example.com"
-        User.objects.create_user(email=email, password="password")
+        mixer.blend(User, email=email)
 
         with pytest.raises(IntegrityError):
-            User.objects.create_user(email=email, password="password2")
+            User.objects.create_user(email=email, password="pwd", username="other")
 
-    def test_username_is_not_unique(self):
-        """
-        CRITICO: Verifica che sia possibile creare due utenti con lo STESSO username.
-        Il tuo modello ha unique=False su username, quindi questo test DEVE passare.
-        """
+    def test_username_unique(self):
+        # Username must be unique (unique=True)
         username = "mario_rossi"
+        mixer.blend(User, username=username)
 
-        # Utente 1
-        user1 = User.objects.create_user(
-            email="mario1@example.com",
-            password="pwd",
-            username=username
-        )
+        with pytest.raises(IntegrityError):
+            User.objects.create_user(email="other@ex.com", password="pwd", username=username)
 
-        # Utente 2 (Stesso username, email diversa)
-        user2 = User.objects.create_user(
-            email="mario2@example.com",
-            password="pwd",
-            username=username
-        )
+    def test_username_not_null(self):
+        # Username cannot be None (null=False)
+        with pytest.raises(IntegrityError):
+            User.objects.create_user(email="n@ex.com", password="pwd", username=None)
 
-        assert user1.username == user2.username
-        assert user1.pk != user2.pk
-        assert User.objects.filter(username=username).count() == 2
-
-    def test_username_can_be_null(self):
-        """
-        Verifica che lo username possa essere None o vuoto (blank=True, null=True).
-        """
-        user = User.objects.create_user(
-            email="nousername@example.com",
-            password="pwd",
-            username=None
-        )
-        assert user.username is None
-
-    def test_username_field_config(self):
-        """
-        Verifica la configurazione dei campi speciali di autenticazione.
-        """
+    def test_fields_config(self):
+        # Check USERNAME_FIELD and REQUIRED_FIELDS
         assert User.USERNAME_FIELD == 'email'
         assert 'username' in User.REQUIRED_FIELDS
-        # REQUIRED_FIELDS non deve contenere USERNAME_FIELD
         assert 'email' not in User.REQUIRED_FIELDS
 
-    def test_user_has_correct_app_label(self):
-        """
-        Opzionale: verifica che l'app_label sia impostata correttamente nei Meta.
-        """
+    def test_app_label(self):
+        # Verify correct app label
         assert User._meta.app_label == 'fiordispino'

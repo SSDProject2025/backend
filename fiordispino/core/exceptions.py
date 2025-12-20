@@ -79,3 +79,21 @@ class ImageEncoderException(APIException):
     status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
     default_detail = "Error in creating box art image"
     default_code = 'image_encoder_error'
+
+
+### USERNAME ###
+class UsernameValidationError(APIException):
+    status_code = status.HTTP_400_BAD_REQUEST
+    default_detail = "Invalid username"
+    default_code = 'username_error'
+
+
+### RANDOM GAMES PARAMETER ###
+class InvalidNumberOfGamesException(APIException):
+     status_code = status.HTTP_400_BAD_REQUEST
+     default_detail = "Number of games must be between 1 and 20"
+     default_code = 'invalid_n_games'
+
+### IMAGES FORMAT ###
+class InvalidImageFormatException(ValidationError):
+    help_message = "Error in creating box art image, note that the image format must be jpg"
